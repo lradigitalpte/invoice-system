@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}{% if invoice %}Edit Invoice{% else %}New Invoice{% endif %} - Invoicing System{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">{% if invoice %}Edit Invoice {{ invoice.invoice_number }}{% else %}Create New Invoice{% endif %}</h1>
+    </div>
+    
+    <form method="POST" action="">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="client_id">Client *</label>
+                <select id="client_id" name="client_id" required>
+                    <option value="">Select a client...</option>
+                    {% for client in clients %}
+                    <option value="{{ client.id }}" {% if invoice and invoice.client_id == client.id %}selected{% endif %}>{{ client.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="status">Status</label>
+                <select id="status" name="status">
+                    <option value="draft" {% if invoice and invoice.status == 'draft' %}selected{% endif %}>Draft</option>
+                    <option value="sent" {% if invoice and invoice.status == 'sent' %}selected{% endif %}>Sent</option>
+                    <option value="paid" {% if invoice and invoice.status == 'paid' %}selected{% endif %}>Paid</option>
+                    <option value="overdue" {% if invoice and invoice.status == 'overdue' %}selected{% endif %}>Overdue</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="issue_date">Issue Date *</label>
+                <input type="date" id="issue_date" name="issue_date" value="{% if invoice %}{{ invoice.issue_date.strftime('%Y-%m-%d') }}{% else %}{{ now.strftime('%Y-%m-%d') }}{% endif %}" required>
+            </div>
+            <div class="form-group">
+                <label for="due_date">Due Date</label>
+                <input type="date" id="due_date" name="due_date" value="{% if invoice %}{{ invoice.due_date.strftime('%Y-%m-%d') if invoice.due_date }}{% endif %}">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="notes">Notes</label>
+            <textarea id="notes" name="notes">{% if invoice %}{{ invoice.notes }}{% endif %}</textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="terms">Payment Terms</label>
+            <textarea id="terms" name="terms">{% if invoice %}{{ invoice.terms }}{% endif %}</textarea>
+        </div>
+        
+        <div style="margin-bottom: 1.5rem;">
+            <h3>Invoice Items</h3>
+            <button type="button" id="add-item-btn" class="btn btn-secondary">+ Add Item</button>
+        </div>
+        
+        <div id="invoice-items">
+            {% if invoice and invoice.items %}
+                {% for item in invoice.items %}
+                <div class="invoice-item card">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Description</label>
+                            <input type="text" name="items[{{ loop.index0 }}][description]" value="{{ item.description }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Quantity</label>
+                            <input type="number" name="items[{{ loop.index0 }}][quantity]" step="0.01" value="{{ item.quantity }}" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Unit Price ($)</label>
+                            <input type="number" name="items[{{ loop.index0 }}][unit_price]" step="0.01" value="{{ item.unit_price }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Tax Rate (%)</label>
+                            <input type="number" name="items[{{ loop.index0 }}][tax_rate]" step="0.01" value="{{ item.tax_rate }}">
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-danger" onclick="this.parentElement.remove()">Remove Item</button>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="invoice-item card">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Description</label>
+                            <input type="text" name="items[0][description]" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Quantity</label>
+                            <input type="number" name="items[0][quantity]" step="0.01" value="1" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Unit Price ($)</label>
+                            <input type="number" name="items[0][unit_price]" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Tax Rate (%)</label>
+                            <input type="number" name="items[0][tax_rate]" step="0.01" value="0">
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-danger" onclick="this.parentElement.remove()">Remove Item</button>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div style="margin-top: 1.5rem;">
+            <button type="submit" class="btn btn-success">Save Invoice</button>
+            <a href="{{ url_for('invoices.list_invoices') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script>
+// Set default date to today
+document.addEventListener('DOMContentLoaded', function() {
+    const issueDateInput = document.getElementById('issue_date');
+    if (!issueDateInput.value) {
+        const today = new Date();
+        issueDateInput.value = today.toISOString().split('T')[0];
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Invoices - Invoicing System{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">Invoices</h1>
+    </div>
+    
+    <div style="margin-bottom: 1rem;">
+        <a href="{{ url_for('invoices.create_invoice') }}" class="btn btn-primary">+ New Invoice</a>
+    </div>
+    
+    {% if invoices.items %}
+    <table>
+        <thead>
+            <tr>
+                <th>Invoice #</th>
+                <th>Client</th>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for invoice in invoices.items %}
+            <tr>
+                <td><a href="{{ url_for('invoices.view_invoice', invoice_id=invoice.id) }}">{{ invoice.invoice_number }}</a></td>
+                <td>{{ invoice.client.name }}</td>
+                <td>{{ invoice.issue_date.strftime('%m/%d/%Y') }}</td>
+                <td>${{ "%.2f"|format(invoice.get_total()) }}</td>
+                <td><span class="badge badge-{{ invoice.status }}">{{ invoice.status.upper() }}</span></td>
+                <td>
+                    <a href="{{ url_for('invoices.view_invoice', invoice_id=invoice.id) }}" class="btn btn-secondary">View</a>
+                    <a href="{{ url_for('invoices.download_pdf', invoice_id=invoice.id) }}" class="btn btn-secondary">PDF</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No invoices found.</p>
+    {% endif %}
+</div>
+{% endblock %}

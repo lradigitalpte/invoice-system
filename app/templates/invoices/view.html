@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Invoice {{ invoice.invoice_number }} - Invoicing System{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h1 class="card-title">Invoice {{ invoice.invoice_number }}</h1>
+                <span class="badge badge-{{ invoice.status }}">{{ invoice.status.upper() }}</span>
+            </div>
+            <div>
+                <a href="{{ url_for('invoices.edit_invoice', invoice_id=invoice.id) }}" class="btn btn-primary">Edit</a>
+                <a href="{{ url_for('invoices.download_pdf', invoice_id=invoice.id) }}" class="btn btn-primary">Download PDF</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="form-row">
+        <div>
+            <h3>Invoice Details</h3>
+            <p><strong>Client:</strong> {{ invoice.client.name }}</p>
+            <p><strong>Issued:</strong> {{ invoice.issue_date.strftime('%B %d, %Y') }}</p>
+            <p><strong>Due:</strong> {{ invoice.due_date.strftime('%B %d, %Y') if invoice.due_date else 'N/A' }}</p>
+        </div>
+        <div>
+            <h3>Client Information</h3>
+            <p>{{ invoice.client.address or '' }}<br>
+            {{ invoice.client.city or '' }}, {{ invoice.client.state or '' }} {{ invoice.client.zip_code or '' }}<br>
+            {{ invoice.client.country or '' }}<br>
+            Email: {{ invoice.client.email or 'N/A' }}<br>
+            Phone: {{ invoice.client.phone or 'N/A' }}</p>
+        </div>
+    </div>
+    
+    <h3 style="margin-top: 2rem;">Invoice Items</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th>Qty</th>
+                <th>Unit Price</th>
+                <th>Tax %</th>
+                <th>Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in invoice.items %}
+            <tr>
+                <td>{{ item.description }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>${{ "%.2f"|format(item.unit_price) }}</td>
+                <td>{{ item.tax_rate }}%</td>
+                <td>${{ "%.2f"|format(item.total) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <div style="margin-top: 1rem; text-align: right;">
+        <p><strong>Subtotal:</strong> ${{ "%.2f"|format(subtotal) }}</p>
+        <p><strong>Tax:</strong> ${{ "%.2f"|format(tax_total) }}</p>
+        <p style="font-size: 1.2rem;"><strong>Total:</strong> ${{ "%.2f"|format(invoice.get_total()) }}</p>
+        {% if invoice.get_paid_amount() > 0 %}
+        <p><strong>Paid:</strong> ${{ "%.2f"|format(invoice.get_paid_amount()) }}</p>
+        <p><strong>Balance:</strong> ${{ "%.2f"|format(invoice.get_balance()) }}</p>
+        {% endif %}
+    </div>
+    
+    {% if invoice.notes %}
+    <div style="margin-top: 1rem; padding: 1rem; background-color: #f9f9f9; border-radius: 4px;">
+        <h4>Notes</h4>
+        <p>{{ invoice.notes }}</p>
+    </div>
+    {% endif %}
+    
+    <h3 style="margin-top: 2rem;">Payments</h3>
+    {% if invoice.payments %}
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Method</th>
+                <th>Notes</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for payment in invoice.payments %}
+            <tr>
+                <td>{{ payment.payment_date.strftime('%m/%d/%Y') }}</td>
+                <td>${{ "%.2f"|format(payment.amount) }}</td>
+                <td>{{ payment.payment_method or 'N/A' }}</td>
+                <td>{{ payment.notes or '' }}</td>
+                <td>
+                    <form method="POST" action="{{ url_for('payments.delete_payment', payment_id=payment.id) }}" style="display:inline;" onsubmit="return confirmDelete('Delete this payment?');">
+                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No payments recorded.</p>
+    {% endif %}
+    
+    <div style="margin-top: 1rem;">
+        <a href="{{ url_for('payments.add_payment', invoice_id=invoice.id) }}" class="btn btn-success">+ Record Payment</a>
+    </div>
+    
+    <div style="margin-top: 2rem;">
+        <a href="{{ url_for('invoices.list_invoices') }}" class="btn btn-secondary">Back to Invoices</a>
+        <form method="POST" action="{{ url_for('invoices.delete_invoice', invoice_id=invoice.id) }}" style="display:inline;" onsubmit="return confirmDelete('Delete this invoice?');">
+            <button type="submit" class="btn btn-danger">Delete Invoice</button>
+        </form>
+    </div>
+</div>
+
+<style>
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,67 @@
+http://localhost:5000{% extends "base.html" %}
+
+{% block title %}{% if client %}Edit Client{% else %}New Client{% endif %} - Invoicing System{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">{% if client %}Edit Client{% else %}Add New Client{% endif %}</h1>
+    </div>
+    
+    <form method="POST" action="">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="name">Client Name *</label>
+                <input type="text" id="name" name="name" value="{% if client %}{{ client.name }}{% endif %}" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" value="{% if client %}{{ client.email }}{% endif %}">
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="phone">Phone</label>
+                <input type="tel" id="phone" name="phone" value="{% if client %}{{ client.phone }}{% endif %}">
+            </div>
+            <div class="form-group">
+                <label for="tax_id">Tax ID</label>
+                <input type="text" id="tax_id" name="tax_id" value="{% if client %}{{ client.tax_id }}{% endif %}">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="address">Address</label>
+            <input type="text" id="address" name="address" value="{% if client %}{{ client.address }}{% endif %}">
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="city">City</label>
+                <input type="text" id="city" name="city" value="{% if client %}{{ client.city }}{% endif %}">
+            </div>
+            <div class="form-group">
+                <label for="state">State/Province</label>
+                <input type="text" id="state" name="state" value="{% if client %}{{ client.state }}{% endif %}">
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="zip_code">ZIP/Postal Code</label>
+                <input type="text" id="zip_code" name="zip_code" value="{% if client %}{{ client.zip_code }}{% endif %}">
+            </div>
+            <div class="form-group">
+                <label for="country">Country</label>
+                <input type="text" id="country" name="country" value="{% if client %}{{ client.country }}{% endif %}">
+            </div>
+        </div>
+        
+        <div style="margin-top: 1.5rem;">
+            <button type="submit" class="btn btn-success">{% if client %}Update Client{% else %}Add Client{% endif %}</button>
+            <a href="{{ url_for('clients.list_clients') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

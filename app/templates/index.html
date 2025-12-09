@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Invoicing System{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+    <h1>Welcome to Your Invoicing System</h1>
+    <p>Get started by creating clients and invoices.</p>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+    <div class="card">
+        <h3>Quick Actions</h3>
+        <ul style="list-style: none;">
+            <li style="margin-bottom: 0.5rem;"><a href="{{ url_for('invoices.create_invoice') }}" class="btn btn-primary" style="width: 100%;">+ New Invoice</a></li>
+            <li style="margin-bottom: 0.5rem;"><a href="{{ url_for('clients.create_client') }}" class="btn btn-primary" style="width: 100%;">+ New Client</a></li>
+            <li style="margin-bottom: 0.5rem;"><a href="{{ url_for('invoices.list_invoices') }}" class="btn btn-secondary" style="width: 100%;">View Invoices</a></li>
+            <li><a href="{{ url_for('clients.list_clients') }}" class="btn btn-secondary" style="width: 100%;">View Clients</a></li>
+        </ul>
+    </div>
+    
+    <div class="card">
+        <h3>System Information</h3>
+        <ul style="list-style: none; line-height: 1.8;">
+            <li><strong>Status:</strong> Online</li>
+            <li><strong>Database:</strong> SQLite (Local)</li>
+            <li><strong>Data Location:</strong> data/invoicing.db</li>
+            <li><strong>Version:</strong> 1.0</li>
+        </ul>
+    </div>
+    
+    <div class="card">
+        <h3>Features</h3>
+        <ul style="list-style: disc; margin-left: 1.5rem;">
+            <li>Manage clients</li>
+            <li>Create invoices</li>
+            <li>Track payments</li>
+            <li>Export to PDF</li>
+            <li>Offline-first storage</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Clients - Invoicing System{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">Clients</h1>
+    </div>
+    
+    <div style="margin-bottom: 1rem;">
+        <a href="{{ url_for('clients.create_client') }}" class="btn btn-primary">+ New Client</a>
+    </div>
+    
+    {% if clients.items %}
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>City</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for client in clients.items %}
+            <tr>
+                <td>{{ client.name }}</td>
+                <td>{{ client.email or 'N/A' }}</td>
+                <td>{{ client.phone or 'N/A' }}</td>
+                <td>{{ client.city or 'N/A' }}</td>
+                <td>
+                    <a href="{{ url_for('clients.edit_client', client_id=client.id) }}" class="btn btn-secondary">Edit</a>
+                    <form method="POST" action="{{ url_for('clients.delete_client', client_id=client.id) }}" style="display:inline;" onsubmit="return confirmDelete('Delete this client?');">
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No clients found.</p>
+    {% endif %}
+</div>
+{% endblock %}
