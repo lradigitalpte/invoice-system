@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
 import os
 
@@ -31,5 +31,10 @@ def create_app():
     app.register_blueprint(payments.bp)
     app.register_blueprint(products.bp)
     app.register_blueprint(quotations.bp)
+
+    # Root route
+    @app.route('/')
+    def index():
+        return render_template('index.html')
     
     return app
