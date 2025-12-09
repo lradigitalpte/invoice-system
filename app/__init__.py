@@ -25,9 +25,11 @@ def create_app():
         db.create_all()
     
     # Register blueprints
-    from app.routes import clients, invoices, payments
+    from app.routes import clients, invoices, payments, products, quotations
     app.register_blueprint(clients.bp)
     app.register_blueprint(invoices.bp)
     app.register_blueprint(payments.bp)
+    app.register_blueprint(products.bp)
+    app.register_blueprint(quotations.bp)
     
     return app

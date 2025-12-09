@@ -57,3 +57,20 @@ def delete_client(client_id):
 def api_list_clients():
     clients = Client.query.all()
     return jsonify([client.to_dict() for client in clients])
+
+@bp.route('/api/search')
+def api_search_clients():
+    query = request.args.get('q', '')
+    if not query:
+        return jsonify([])
+    
+    clients = Client.query.filter(
+        db.or_(
+            Client.name.ilike(f'%{query}%'),
+            Client.email.ilike(f'%{query}%'),
+            Client.phone.ilike(f'%{query}%')
+        )
+    ).limit(10).all()
+    
+    return jsonify([client.to_dict() for client in clients])
+

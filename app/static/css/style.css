@@ -257,3 +257,55 @@ input:focus, select:focus, textarea:focus {
         padding: 0.5rem;
     }
 }
+
+/* Autocomplete Styles */
+.autocomplete-container {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+.autocomplete-items {
+    position: absolute;
+    border: 1px solid #d4d4d4;
+    border-top: none;
+    z-index: 99;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 300px;
+    overflow-y: auto;
+    background-color: white;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.autocomplete-items div {
+    padding: 10px;
+    cursor: pointer;
+    background-color: #fff;
+    border-bottom: 1px solid #d4d4d4;
+}
+
+.autocomplete-items div:hover {
+    background-color: #e9e9e9;
+}
+
+.autocomplete-active {
+    background-color: #3498db !important;
+    color: white;
+}
+
+.autocomplete-main {
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.autocomplete-subtitle {
+    font-size: 0.85em;
+    color: #666;
+}
+
+.autocomplete-active .autocomplete-subtitle {
+    color: #e0e0e0;
+}
+

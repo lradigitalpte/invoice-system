@@ -13,7 +13,9 @@
             <a href="/" class="navbar-brand">Invoicing System</a>
             <ul class="navbar-menu">
                 <li><a href="{{ url_for('invoices.list_invoices') }}">Invoices</a></li>
+                <li><a href="{{ url_for('quotations.list_quotations') }}">Quotations</a></li>
                 <li><a href="{{ url_for('clients.list_clients') }}">Clients</a></li>
+                <li><a href="{{ url_for('products.list_products') }}">Products</a></li>
                 <li><a href="{{ url_for('invoices.create_invoice') }}" class="btn-primary">+ New Invoice</a></li>
             </ul>
         </div>

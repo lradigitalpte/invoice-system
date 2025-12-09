@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">{% if quotation %}Edit Quotation {{ quotation.quotation_number }}{% else %}Create New Quotation{% endif %}</h1>
+    </div>
+    
+    <form method="POST" action="">
+        <div class="form-row">
+            <div class="form-group autocomplete-container">
+                <label for="client_search">Client * (Type to search)</label>
+                <input type="text" id="client_search" placeholder="Start typing client name..." {% if quotation %}value="{{ quotation.client.name }}"{% endif %}>
+                <input type="hidden" id="client_id" name="client_id" {% if quotation %}value="{{ quotation.client_id }}"{% endif %} required>
+            </div>
+            <div class="form-group">
+                <label for="status">Status</label>
+                <select id="status" name="status">
+                    <option value="pending" {% if quotation and quotation.status == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="accepted" {% if quotation and quotation.status == 'accepted' %}selected{% endif %}>Accepted</option>
+                    <option value="rejected" {% if quotation and quotation.status == 'rejected' %}selected{% endif %}>Rejected</option>
+                    <option value="expired" {% if quotation and quotation.status == 'expired' %}selected{% endif %}>Expired</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="issue_date">Issue Date *</label>
+                <input type="date" id="issue_date" name="issue_date" value="{% if quotation %}{{ quotation.issue_date.strftime('%Y-%m-%d') }}{% else %}{{ now.strftime('%Y-%m-%d') }}{% endif %}" required>
+            </div>
+            <div class="form-group">
+                <label for="valid_until">Valid Until</label>
+                <input type="date" id="valid_until" name="valid_until" value="{% if quotation %}{{ quotation.valid_until.strftime('%Y-%m-%d') if quotation.valid_until }}{% endif %}">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="notes">Notes</label>
+            <textarea id="notes" name="notes">{% if quotation %}{{ quotation.notes }}{% endif %}</textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="terms">Terms</label>
+            <textarea id="terms" name="terms">{% if quotation %}{{ quotation.terms }}{% endif %}</textarea>
+        </div>
+        
+        <div style="margin: 2rem 0;">
+            <h3>Items</h3>
+            <div id="items-container">
+                {% if quotation %}
+                    {% for item in quotation.items %}
+                    <div class="invoice-item">
+                        <div class="form-row">
+                            <div class="form-group autocomplete-container" style="flex: 2;">
+                                <input type="text" class="product-search" name="items[{{ loop.index0 }}][description]" placeholder="Description *" value="{{ item.description }}" required>
+                            </div>
+                            <div class="form-group">
+                                <input type="number" class="item-quantity" name="items[{{ loop.index0 }}][quantity]" placeholder="Qty" value="{{ item.quantity }}" step="0.01" min="0">
+                            </div>
+                            <div class="form-group">
+                                <input type="number" class="item-price" name="items[{{ loop.index0 }}][unit_price]" placeholder="Unit Price" value="{{ item.unit_price }}" step="0.01" min="0">
+                            </div>
+                            <div class="form-group">
+                                <input type="number" class="item-tax" name="items[{{ loop.index0 }}][tax_rate]" placeholder="Tax %" value="{{ item.tax_rate }}" step="0.1" min="0">
+                            </div>
+                            <button type="button" class="btn-danger" onclick="this.parentElement.remove()">Remove</button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="invoice-item">
+                        <div class="form-row">
+                            <div class="form-group autocomplete-container" style="flex: 2;">
+                                <input type="text" class="product-search" name="items[0][description]" placeholder="Description *" required>
+                            </div>
+                            <div class="form-group">
+                                <input type="number" class="item-quantity" name="items[0][quantity]" placeholder="Qty" value="1" step="0.01" min="0">
+                            </div>
+                            <div class="form-group">
+                                <input type="number" class="item-price" name="items[0][unit_price]" placeholder="Unit Price" step="0.01" min="0">
+                            </div>
+                            <div class="form-group">
+                                <input type="number" class="item-tax" name="items[0][tax_rate]" placeholder="Tax %" value="0" step="0.1" min="0">
+                            </div>
+                            <button type="button" class="btn-danger" onclick="this.parentElement.remove()">Remove</button>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+            <button type="button" class="btn" onclick="addItem()">Add Item</button>
+        </div>
+        
+        <div style="margin-top: 2rem;">
+            <button type="submit" class="btn">{% if quotation %}Update Quotation{% else %}Create Quotation{% endif %}</button>
+            <a href="{{ url_for('quotations.list_quotations') }}" class="btn" style="background: #6c757d;">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script src="{{ url_for('static', filename='js/autocomplete.js') }}"></script>
+<script>
+let itemCount = {{ quotation.items|length if quotation else 1 }};
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize client search
+    initClientAutocomplete('client_search', function(client) {
+        document.getElementById('client_search').value = client.name;
+        document.getElementById('client_id').value = client.id;
+    });
+    
+    // Initialize product autocomplete
+    initializeProductAutocomplete();
+});
+
+function initializeProductAutocomplete() {
+    document.querySelectorAll('.product-search').forEach(input => {
+        const row = input.closest('.invoice-item');
+        const priceInput = row.querySelector('.item-price');
+        const taxInput = row.querySelector('.item-tax');
+        
+        initProductAutocomplete(input, function(product) {
+            input.value = product.name;
+            priceInput.value = product.price.toFixed(2);
+            taxInput.value = product.tax_rate;
+        });
+    });
+}
+
+function addItem() {
+    const container = document.getElementById('items-container');
+    const itemDiv = document.createElement('div');
+    itemDiv.className = 'invoice-item';
+    itemDiv.innerHTML = `
+        <div class="form-row">
+            <div class="form-group autocomplete-container" style="flex: 2;">
+                <input type="text" class="product-search" name="items[${itemCount}][description]" placeholder="Description *" required>
+            </div>
+            <div class="form-group">
+                <input type="number" class="item-quantity" name="items[${itemCount}][quantity]" placeholder="Qty" value="1" step="0.01" min="0">
+            </div>
+            <div class="form-group">
+                <input type="number" class="item-price" name="items[${itemCount}][unit_price]" placeholder="Unit Price" step="0.01" min="0">
+            </div>
+            <div class="form-group">
+                <input type="number" class="item-tax" name="items[${itemCount}][tax_rate]" placeholder="Tax %" value="0" step="0.1" min="0">
+            </div>
+            <button type="button" class="btn-danger" onclick="this.parentElement.parentElement.remove()">Remove</button>
+        </div>
+    `;
+    container.appendChild(itemDiv);
+    itemCount++;
+    
+    // Initialize autocomplete for new item
+    initializeProductAutocomplete();
+}
+</script>
+{% endblock %}

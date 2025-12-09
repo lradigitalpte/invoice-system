@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="header">
+        <h1>Quotations</h1>
+        <a href="{{ url_for('quotations.create_quotation') }}" class="btn">New Quotation</a>
+    </div>
+    
+    <div class="filters">
+        <select onchange="window.location.href='{{ url_for('quotations.list_quotations') }}?status=' + this.value">
+            <option value="all" {{ 'selected' if status_filter == 'all' }}>All Status</option>
+            <option value="pending" {{ 'selected' if status_filter == 'pending' }}>Pending</option>
+            <option value="accepted" {{ 'selected' if status_filter == 'accepted' }}>Accepted</option>
+            <option value="rejected" {{ 'selected' if status_filter == 'rejected' }}>Rejected</option>
+            <option value="expired" {{ 'selected' if status_filter == 'expired' }}>Expired</option>
+        </select>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Quotation #</th>
+                <th>Client</th>
+                <th>Date</th>
+                <th>Valid Until</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for quotation in quotations.items %}
+            <tr>
+                <td><a href="{{ url_for('quotations.view_quotation', quotation_id=quotation.id) }}">{{ quotation.quotation_number }}</a></td>
+                <td>{{ quotation.client.name }}</td>
+                <td>{{ quotation.issue_date.strftime('%Y-%m-%d') }}</td>
+                <td>{{ quotation.valid_until.strftime('%Y-%m-%d') if quotation.valid_until else '-' }}</td>
+                <td>${{ "%.2f"|format(quotation.get_total()) }}</td>
+                <td>
+                    <span class="badge badge-{{ 'warning' if quotation.status == 'pending' else ('success' if quotation.status == 'accepted' else 'danger') }}">
+                        {{ quotation.status }}
+                    </span>
+                </td>
+                <td>
+                    <a href="{{ url_for('quotations.view_quotation', quotation_id=quotation.id) }}" class="btn-small">View</a>
+                    <a href="{{ url_for('quotations.edit_quotation', quotation_id=quotation.id) }}" class="btn-small">Edit</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    {% if quotations.has_prev or quotations.has_next %}
+    <div class="pagination">
+        {% if quotations.has_prev %}
+        <a href="{{ url_for('quotations.list_quotations', page=quotations.prev_num, status=status_filter) }}">Previous</a>
+        {% endif %}
+        <span>Page {{ quotations.page }} of {{ quotations.pages }}</span>
+        {% if quotations.has_next %}
+        <a href="{{ url_for('quotations.list_quotations', page=quotations.next_num, status=status_filter) }}">Next</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="header">
+        <h1>Products</h1>
+        <a href="{{ url_for('products.create_product') }}" class="btn">New Product</a>
+    </div>
+    
+    <div class="filters">
+        <select onchange="window.location.href='{{ url_for('products.list_products') }}?category=' + this.value + '&status={{ status_filter}}'">
+            <option value="all" {{ 'selected' if category_filter == 'all' }}>All Categories</option>
+            {% for category in categories %}
+            <option value="{{ category }}" {{ 'selected' if category_filter == category }}>{{ category }}</option>
+            {% endfor %}
+        </select>
+        
+        <select onchange="window.location.href='{{ url_for('products.list_products') }}?category={{ category_filter }}&status=' + this.value">
+            <option value="all" {{ 'selected' if status_filter == 'all' }}>All Status</option>
+            <option value="active" {{ 'selected' if status_filter == 'active' }}>Active</option>
+            <option value="inactive" {{ 'selected' if status_filter == 'inactive' }}>Inactive</option>
+        </select>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>SKU</th>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Tax Rate</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in products.items %}
+            <tr>
+                <td>{{ product.sku or '-' }}</td>
+                <td>{{ product.name }}</td>
+                <td>{{ product.category or '-' }}</td>
+                <td>${{ "%.2f"|format(product.price) }}</td>
+                <td>{{ product.tax_rate }}%</td>
+                <td>
+                    <span class="badge {{ 'badge-success' if product.is_active else 'badge-danger' }}">
+                        {{ 'Active' if product.is_active else 'Inactive' }}
+                    </span>
+                </td>
+                <td>
+                    <a href="{{ url_for('products.edit_product', product_id=product.id) }}" class="btn-small">Edit</a>
+                    <form method="POST" action="{{ url_for('products.delete_product', product_id=product.id) }}" style="display: inline;" onsubmit="return confirm('Delete this product?');">
+                        <button type="submit" class="btn-small btn-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    {% if products.has_prev or products.has_next %}
+    <div class="pagination">
+        {% if products.has_prev %}
+        <a href="{{ url_for('products.list_products', page=products.prev_num, category=category_filter, status=status_filter) }}">Previous</a>
+        {% endif %}
+        <span>Page {{ products.page }} of {{ products.pages }}</span>
+        {% if products.has_next %}
+        <a href="{{ url_for('products.list_products', page=products.next_num, category=category_filter, status=status_filter) }}">Next</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

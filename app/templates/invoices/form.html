@@ -2,6 +2,10 @@
 
 {% block title %}{% if invoice %}Edit Invoice{% else %}New Invoice{% endif %} - Invoicing System{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{% endblock %}
+
 {% block content %}
 <div class="card">
     <div class="card-header">
@@ -10,14 +14,10 @@
     
     <form method="POST" action="">
         <div class="form-row">
-            <div class="form-group">
-                <label for="client_id">Client *</label>
-                <select id="client_id" name="client_id" required>
-                    <option value="">Select a client...</option>
-                    {% for client in clients %}
-                    <option value="{{ client.id }}" {% if invoice and invoice.client_id == client.id %}selected{% endif %}>{{ client.name }}</option>
-                    {% endfor %}
-                </select>
+            <div class="form-group autocomplete-container">
+                <label for="client_search">Client * (Type to search)</label>
+                <input type="text" id="client_search" placeholder="Start typing client name..." {% if invoice %}value="{{ invoice.client.name }}"{% endif %}>
+                <input type="hidden" id="client_id" name="client_id" {% if invoice %}value="{{ invoice.client_id }}"{% endif %} required>
             </div>
             <div class="form-group">
                 <label for="status">Status</label>
@@ -61,23 +61,23 @@
                 {% for item in invoice.items %}
                 <div class="invoice-item card">
                     <div class="form-row">
-                        <div class="form-group">
-                            <label>Description</label>
-                            <input type="text" name="items[{{ loop.index0 }}][description]" value="{{ item.description }}" required>
+                        <div class="form-group autocomplete-container" style="flex: 2;">
+                            <label>Description (Type to search products)</label>
+                            <input type="text" class="product-search" name="items[{{ loop.index0 }}][description]" value="{{ item.description }}" required>
                         </div>
                         <div class="form-group">
                             <label>Quantity</label>
-                            <input type="number" name="items[{{ loop.index0 }}][quantity]" step="0.01" value="{{ item.quantity }}" required>
+                            <input type="number" class="item-quantity" name="items[{{ loop.index0 }}][quantity]" step="0.01" value="{{ item.quantity }}" required>
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label>Unit Price ($)</label>
-                            <input type="number" name="items[{{ loop.index0 }}][unit_price]" step="0.01" value="{{ item.unit_price }}" required>
+                            <input type="number" class="item-price" name="items[{{ loop.index0 }}][unit_price]" step="0.01" value="{{ item.unit_price }}" required>
                         </div>
                         <div class="form-group">
                             <label>Tax Rate (%)</label>
-                            <input type="number" name="items[{{ loop.index0 }}][tax_rate]" step="0.01" value="{{ item.tax_rate }}">
+                            <input type="number" class="item-tax" name="items[{{ loop.index0 }}][tax_rate]" step="0.01" value="{{ item.tax_rate }}">
                         </div>
                     </div>
                     <button type="button" class="btn btn-danger" onclick="this.parentElement.remove()">Remove Item</button>
@@ -86,23 +86,23 @@
             {% else %}
                 <div class="invoice-item card">
                     <div class="form-row">
-                        <div class="form-group">
-                            <label>Description</label>
-                            <input type="text" name="items[0][description]" required>
+                        <div class="form-group autocomplete-container" style="flex: 2;">
+                            <label>Description (Type to search products)</label>
+                            <input type="text" class="product-search" name="items[0][description]" required>
                         </div>
                         <div class="form-group">
                             <label>Quantity</label>
-                            <input type="number" name="items[0][quantity]" step="0.01" value="1" required>
+                            <input type="number" class="item-quantity" name="items[0][quantity]" step="0.01" value="1" required>
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label>Unit Price ($)</label>
-                            <input type="number" name="items[0][unit_price]" step="0.01" required>
+                            <input type="number" class="item-price" name="items[0][unit_price]" step="0.01" required>
                         </div>
                         <div class="form-group">
                             <label>Tax Rate (%)</label>
-                            <input type="number" name="items[0][tax_rate]" step="0.01" value="0">
+                            <input type="number" class="item-tax" name="items[0][tax_rate]" step="0.01" value="0">
                         </div>
                     </div>
                     <button type="button" class="btn btn-danger" onclick="this.parentElement.remove()">Remove Item</button>
@@ -117,14 +117,76 @@
     </form>
 </div>
 
+<script src="{{ url_for('static', filename='js/autocomplete.js') }}"></script>
 <script>
-// Set default date to today
+let itemCount = {{ invoice.items|length if invoice else 1 }};
+
+// Initialize client autocomplete
 document.addEventListener('DOMContentLoaded', function() {
+    // Set default date to today
     const issueDateInput = document.getElementById('issue_date');
     if (!issueDateInput.value) {
         const today = new Date();
         issueDateInput.value = today.toISOString().split('T')[0];
     }
+    
+    // Initialize client search
+    initClientAutocomplete('client_search', function(client) {
+        document.getElementById('client_search').value = client.name;
+        document.getElementById('client_id').value = client.id;
+    });
+    
+    // Initialize product autocomplete for existing items
+    initializeProductAutocomplete();
+});
+
+function initializeProductAutocomplete() {
+    document.querySelectorAll('.product-search').forEach(input => {
+        const row = input.closest('.invoice-item');
+        const priceInput = row.querySelector('.item-price');
+        const taxInput = row.querySelector('.item-tax');
+        
+        initProductAutocomplete(input, function(product) {
+            input.value = product.name;
+            priceInput.value = product.price.toFixed(2);
+            taxInput.value = product.tax_rate;
+        });
+    });
+}
+
+// Add item button
+document.getElementById('add-item-btn').addEventListener('click', function() {
+    const container = document.getElementById('invoice-items');
+    const newItem = document.createElement('div');
+    newItem.className = 'invoice-item card';
+    newItem.innerHTML = `
+        <div class="form-row">
+            <div class="form-group autocomplete-container" style="flex: 2;">
+                <label>Description (Type to search products)</label>
+                <input type="text" class="product-search" name="items[${itemCount}][description]" required>
+            </div>
+            <div class="form-group">
+                <label>Quantity</label>
+                <input type="number" class="item-quantity" name="items[${itemCount}][quantity]" step="0.01" value="1" required>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Unit Price ($)</label>
+                <input type="number" class="item-price" name="items[${itemCount}][unit_price]" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label>Tax Rate (%)</label>
+                <input type="number" class="item-tax" name="items[${itemCount}][tax_rate]" step="0.01" value="0">
+            </div>
+        </div>
+        <button type="button" class="btn btn-danger" onclick="this.parentElement.remove()">Remove Item</button>
+    `;
+    container.appendChild(newItem);
+    itemCount++;
+    
+    // Initialize autocomplete for new item
+    initializeProductAutocomplete();
 });
 </script>
 {% endblock %}
