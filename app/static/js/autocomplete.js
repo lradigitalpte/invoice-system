@@ -4,6 +4,9 @@ class Autocomplete {
         this.input = input;
         this.options = options;
         this.currentFocus = -1;
+        this.debounceTimer = null;
+        this.minChars = options.minChars || 2;  // Minimum characters before searching
+        this.debounceDelay = options.debounceDelay || 300;  // Wait 300ms after user stops typing
         this.init();
     }
 
@@ -17,16 +20,40 @@ class Autocomplete {
         });
     }
 
-    async handleInput() {
-        const value = this.input.value;
+    handleInput() {
+        const value = this.input.value.trim();
         this.closeList();
         
-        if (!value) return;
+        // Clear existing timer
+        if (this.debounceTimer) {
+            clearTimeout(this.debounceTimer);
+        }
+        
+        // Check minimum character requirement
+        if (!value || value.length < this.minChars) {
+            return;
+        }
+        
+        // Debounce: wait for user to stop typing
+        this.debounceTimer = setTimeout(() => {
+            this.performSearch(value);
+        }, this.debounceDelay);
+    }
 
+    async performSearch(value) {
+        // Show loading indicator
+        this.showLoading();
+        
         // Fetch data from API
         const items = await this.fetchData(value);
         
-        if (items.length === 0) return;
+        // Hide loading indicator
+        this.hideLoading();
+        
+        if (items.length === 0) {
+            this.showNoResults();
+            return;
+        }
 
         // Create autocomplete container
         const listDiv = document.createElement('div');
@@ -34,8 +61,12 @@ class Autocomplete {
         listDiv.setAttribute('class', 'autocomplete-items');
         this.input.parentNode.appendChild(listDiv);
 
+        // Limit displayed items to prevent huge dropdowns
+        const maxDisplayItems = 15;
+        const displayItems = items.slice(0, maxDisplayItems);
+        
         // Create items
-        items.forEach((item, index) => {
+        displayItems.forEach((item, index) => {
             const itemDiv = document.createElement('div');
             itemDiv.innerHTML = this.formatItem(item, value);
             itemDiv.addEventListener('click', () => {
@@ -44,6 +75,27 @@ class Autocomplete {
             });
             listDiv.appendChild(itemDiv);
         });
+        
+        // Show "more results" message if there are more items
+        if (items.length > maxDisplayItems) {
+            const moreDiv = document.createElement('div');
+            moreDiv.className = 'autocomplete-more';
+            moreDiv.textContent = `... and ${items.length - maxDisplayItems} more. Type more to narrow results.`;
+            listDiv.appendChild(moreDiv);
+        }
+    }
+    
+    showLoading() {
+        // Optional: show loading indicator
+        // Can be implemented if needed
+    }
+    
+    hideLoading() {
+        // Optional: hide loading indicator
+    }
+    
+    showNoResults() {
+        // Optional: show "no results" message
     }
 
     async fetchData(query) {
@@ -144,8 +196,23 @@ function initProductAutocomplete(inputElement, onSelectCallback) {
 
     new Autocomplete(inputElement, {
         apiUrl: '/products/api/search',
-        displayField: (item) => item.name,
-        subtitle: (item) => `$${item.price.toFixed(2)} ${item.sku ? '• SKU: ' + item.sku : ''}`.trim(),
+        minChars: 2,  // Require at least 2 characters
+        debounceDelay: 300,  // Wait 300ms after user stops typing
+        displayField: (item) => {
+            // If it's a variant, show product name with variant label
+            if (item.variant_data && Object.keys(item.variant_data).length > 0) {
+                const variantLabel = Object.entries(item.variant_data)
+                    .map(([key, value]) => `${key}: ${value}`)
+                    .join(' - ');
+                return `${item.product_name || item.name} - ${variantLabel}`;
+            }
+            return item.name;
+        },
+        subtitle: (item) => {
+            const price = item.price ? `$${item.price.toFixed(2)}` : '';
+            const sku = item.sku ? `SKU: ${item.sku}` : '';
+            return [price, sku].filter(Boolean).join(' • ');
+        },
         onSelect: onSelectCallback
     });
 }

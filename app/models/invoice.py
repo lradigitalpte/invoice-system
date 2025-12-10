@@ -25,7 +25,9 @@ class Invoice(db.Model):
         return sum(payment.amount for payment in self.payments)
     
     def get_balance(self):
-        return self.get_total() - self.get_paid_amount()
+        """Calculate balance owed. Returns 0 if overpaid (paid amount exceeds total)."""
+        balance = self.get_total() - self.get_paid_amount()
+        return max(0, balance)  # Don't show negative balance if overpaid
     
     def to_dict(self):
         return {

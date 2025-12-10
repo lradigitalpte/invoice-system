@@ -10,14 +10,32 @@ bp = Blueprint('quotations', __name__, url_prefix='/quotations')
 @bp.route('/')
 def list_quotations():
     status_filter = request.args.get('status', 'all')
+    search = request.args.get('search', '').strip()
+    search_by = request.args.get('search_by', 'quotation_number')
     page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+    
+    # Validate per_page to prevent abuse
+    if per_page not in [5, 10, 25, 50, 100]:
+        per_page = 10
     
     query = Quotation.query
     if status_filter != 'all':
         query = query.filter_by(status=status_filter)
     
-    quotations = query.paginate(page=page, per_page=20)
-    return render_template('quotations/list.html', quotations=quotations, status_filter=status_filter)
+    if search:
+        if search_by == 'client_name':
+            query = query.join(Client).filter(Client.name.ilike(f'%{search}%'))
+        elif search_by == 'quotation_number':
+            query = query.filter(Quotation.quotation_number.ilike(f'%{search}%'))
+        elif search_by == 'quotation_id':
+            try:
+                query = query.filter(Quotation.id == int(search))
+            except:
+                pass
+    
+    quotations = query.order_by(Quotation.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    return render_template('quotations/list.html', quotations=quotations, status_filter=status_filter, search=search, search_by=search_by, per_page=per_page)
 
 @bp.route('/new', methods=['GET', 'POST'])
 def create_quotation():

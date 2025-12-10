@@ -6,16 +6,41 @@ bp = Blueprint('clients', __name__, url_prefix='/clients')
 
 @bp.route('/')
 def list_clients():
+    search = request.args.get('search', '').strip()
+    search_by = request.args.get('search_by', 'name')
     page = request.args.get('page', 1, type=int)
-    clients = Client.query.paginate(page=page, per_page=20)
-    return render_template('clients/list.html', clients=clients)
+    per_page = request.args.get('per_page', 10, type=int)
+    
+    # Validate per_page to prevent abuse
+    if per_page not in [5, 10, 25, 50, 100]:
+        per_page = 10
+    
+    query = Client.query
+    
+    if search:
+        if search_by == 'name':
+            query = query.filter(Client.name.ilike(f'%{search}%'))
+        elif search_by == 'client_id':
+            try:
+                query = query.filter(Client.id == int(search))
+            except:
+                pass
+        elif search_by == 'email':
+            query = query.filter(Client.email.ilike(f'%{search}%'))
+    
+    clients = query.order_by(Client.name).paginate(page=page, per_page=per_page, error_out=False)
+    return render_template('clients/list.html', clients=clients, search=search, search_by=search_by, per_page=per_page)
 
 @bp.route('/new', methods=['GET', 'POST'])
 def create_client():
     if request.method == 'POST':
+        email = request.form.get('email', '').strip()
+        if not email:
+            return render_template('clients/form.html', client=None, error='Email is required.'), 400
+        
         client = Client(
             name=request.form.get('name'),
-            email=request.form.get('email'),
+            email=email,
             phone=request.form.get('phone'),
             address=request.form.get('address'),
             city=request.form.get('city'),
@@ -33,8 +58,12 @@ def create_client():
 def edit_client(client_id):
     client = Client.query.get_or_404(client_id)
     if request.method == 'POST':
+        email = request.form.get('email', '').strip()
+        if not email:
+            return render_template('clients/form.html', client=client, error='Email is required.'), 400
+        
         client.name = request.form.get('name')
-        client.email = request.form.get('email')
+        client.email = email
         client.phone = request.form.get('phone')
         client.address = request.form.get('address')
         client.city = request.form.get('city')

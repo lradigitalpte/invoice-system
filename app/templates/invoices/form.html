@@ -16,12 +16,12 @@
         <div class="form-row">
             <div class="form-group autocomplete-container">
                 <label for="client_search">Client * (Type to search)</label>
-                <input type="text" id="client_search" placeholder="Start typing client name..." {% if invoice %}value="{{ invoice.client.name }}"{% endif %}>
+                <input type="text" id="client_search" class="form-input-enhanced" placeholder="Start typing client name..." {% if invoice %}value="{{ invoice.client.name }}"{% endif %}>
                 <input type="hidden" id="client_id" name="client_id" {% if invoice %}value="{{ invoice.client_id }}"{% endif %} required>
             </div>
             <div class="form-group">
                 <label for="status">Status</label>
-                <select id="status" name="status">
+                <select id="status" name="status" class="form-select-enhanced">
                     <option value="draft" {% if invoice and invoice.status == 'draft' %}selected{% endif %}>Draft</option>
                     <option value="sent" {% if invoice and invoice.status == 'sent' %}selected{% endif %}>Sent</option>
                     <option value="paid" {% if invoice and invoice.status == 'paid' %}selected{% endif %}>Paid</option>
@@ -33,27 +33,31 @@
         <div class="form-row">
             <div class="form-group">
                 <label for="issue_date">Issue Date *</label>
-                <input type="date" id="issue_date" name="issue_date" value="{% if invoice %}{{ invoice.issue_date.strftime('%Y-%m-%d') }}{% else %}{{ now.strftime('%Y-%m-%d') }}{% endif %}" required>
+                <input type="date" id="issue_date" name="issue_date" class="form-input-enhanced" value="{% if invoice %}{{ invoice.issue_date.strftime('%Y-%m-%d') }}{% else %}{{ now.strftime('%Y-%m-%d') }}{% endif %}" required>
+                <small class="form-help-text">Cannot be a past date</small>
             </div>
             <div class="form-group">
                 <label for="due_date">Due Date</label>
-                <input type="date" id="due_date" name="due_date" value="{% if invoice %}{{ invoice.due_date.strftime('%Y-%m-%d') if invoice.due_date }}{% endif %}">
+                <input type="date" id="due_date" name="due_date" class="form-input-enhanced" value="{% if invoice %}{{ invoice.due_date.strftime('%Y-%m-%d') if invoice.due_date }}{% endif %}">
+                <small class="form-help-text">Must be on or after issue date</small>
             </div>
         </div>
         
         <div class="form-group">
             <label for="notes">Notes</label>
-            <textarea id="notes" name="notes">{% if invoice %}{{ invoice.notes }}{% endif %}</textarea>
+            <textarea id="notes" name="notes" class="form-input-enhanced">{% if invoice %}{{ invoice.notes }}{% endif %}</textarea>
         </div>
         
         <div class="form-group">
             <label for="terms">Payment Terms</label>
-            <textarea id="terms" name="terms">{% if invoice %}{{ invoice.terms }}{% endif %}</textarea>
+            <textarea id="terms" name="terms" class="form-input-enhanced">{% if invoice %}{{ invoice.terms }}{% endif %}</textarea>
         </div>
         
-        <div style="margin-bottom: 1.5rem;">
-            <h3>Invoice Items</h3>
-            <button type="button" id="add-item-btn" class="btn btn-secondary">+ Add Item</button>
+        <div style="margin: 2rem 0 1.5rem 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3 style="margin: 0;">Invoice Items</h3>
+                <button type="button" id="add-item-btn" class="btn btn-primary">+ Add Item</button>
+            </div>
         </div>
         
         <div id="invoice-items">
@@ -63,21 +67,21 @@
                     <div class="form-row">
                         <div class="form-group autocomplete-container" style="flex: 2;">
                             <label>Description (Type to search products)</label>
-                            <input type="text" class="product-search" name="items[{{ loop.index0 }}][description]" value="{{ item.description }}" required>
+                            <input type="text" class="product-search form-input-enhanced" name="items[{{ loop.index0 }}][description]" value="{{ item.description }}" required>
                         </div>
                         <div class="form-group">
                             <label>Quantity</label>
-                            <input type="number" class="item-quantity" name="items[{{ loop.index0 }}][quantity]" step="0.01" value="{{ item.quantity }}" required>
+                            <input type="number" class="item-quantity form-input-enhanced" name="items[{{ loop.index0 }}][quantity]" step="0.01" value="{{ item.quantity }}" required>
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label>Unit Price ($)</label>
-                            <input type="number" class="item-price" name="items[{{ loop.index0 }}][unit_price]" step="0.01" value="{{ item.unit_price }}" required>
+                            <input type="number" class="item-price form-input-enhanced" name="items[{{ loop.index0 }}][unit_price]" step="0.01" value="{{ item.unit_price }}" required>
                         </div>
                         <div class="form-group">
                             <label>Tax Rate (%)</label>
-                            <input type="number" class="item-tax" name="items[{{ loop.index0 }}][tax_rate]" step="0.01" value="{{ item.tax_rate }}">
+                            <input type="number" class="item-tax form-input-enhanced" name="items[{{ loop.index0 }}][tax_rate]" step="0.01" value="{{ item.tax_rate }}">
                         </div>
                     </div>
                     <button type="button" class="btn btn-danger" onclick="this.parentElement.remove()">Remove Item</button>
@@ -88,21 +92,21 @@
                     <div class="form-row">
                         <div class="form-group autocomplete-container" style="flex: 2;">
                             <label>Description (Type to search products)</label>
-                            <input type="text" class="product-search" name="items[0][description]" required>
+                            <input type="text" class="product-search form-input-enhanced" name="items[0][description]" required>
                         </div>
                         <div class="form-group">
                             <label>Quantity</label>
-                            <input type="number" class="item-quantity" name="items[0][quantity]" step="0.01" value="1" required>
+                            <input type="number" class="item-quantity form-input-enhanced" name="items[0][quantity]" step="0.01" value="1" required>
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label>Unit Price ($)</label>
-                            <input type="number" class="item-price" name="items[0][unit_price]" step="0.01" required>
+                            <input type="number" class="item-price form-input-enhanced" name="items[0][unit_price]" step="0.01" required>
                         </div>
                         <div class="form-group">
                             <label>Tax Rate (%)</label>
-                            <input type="number" class="item-tax" name="items[0][tax_rate]" step="0.01" value="0">
+                            <input type="number" class="item-tax form-input-enhanced" name="items[0][tax_rate]" step="0.01" value="0">
                         </div>
                     </div>
                     <button type="button" class="btn btn-danger" onclick="this.parentElement.remove()">Remove Item</button>
@@ -110,9 +114,9 @@
             {% endif %}
         </div>
         
-        <div style="margin-top: 1.5rem;">
-            <button type="submit" class="btn btn-success">Save Invoice</button>
+        <div style="margin-top: 2.5rem; padding-top: 1.5rem; border-top: 2px solid #f3f4f6; display: flex; gap: 1rem; justify-content: flex-end;">
             <a href="{{ url_for('invoices.list_invoices') }}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-success">Save Invoice</button>
         </div>
     </form>
 </div>
@@ -121,24 +125,171 @@
 <script>
 let itemCount = {{ invoice.items|length if invoice else 1 }};
 
+// Store client data for email modal (global scope so modal function can access it)
+let selectedClient = {
+    name: {% if invoice and invoice.client %}'{{ invoice.client.name }}'{% else %}null{% endif %},
+    email: {% if invoice and invoice.client %}'{{ invoice.client.email }}'{% else %}null{% endif %}
+};
+
 // Initialize client autocomplete
 document.addEventListener('DOMContentLoaded', function() {
-    // Set default date to today
+    // Set default date to today and set min to today
     const issueDateInput = document.getElementById('issue_date');
+    const dueDateInput = document.getElementById('due_date');
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    
+    // Set minimum date to today for issue date (cannot be in past)
+    issueDateInput.setAttribute('min', todayStr);
+    
     if (!issueDateInput.value) {
-        const today = new Date();
-        issueDateInput.value = today.toISOString().split('T')[0];
+        issueDateInput.value = todayStr;
     }
+    
+    // Set minimum date for due date based on issue date
+    function updateDueDateMin() {
+        const issueDate = issueDateInput.value;
+        if (issueDate) {
+            dueDateInput.setAttribute('min', issueDate);
+        }
+    }
+    
+    // Update due date min when issue date changes
+    issueDateInput.addEventListener('change', updateDueDateMin);
+    updateDueDateMin(); // Set initial min
+    
+    // Validate due date when changed
+    dueDateInput.addEventListener('change', function() {
+        const issueDate = issueDateInput.value;
+        const dueDate = this.value;
+        if (issueDate && dueDate && dueDate < issueDate) {
+            alert('Due date cannot be before issue date. Please select a date on or after ' + new Date(issueDate).toLocaleDateString());
+            this.value = issueDate;
+        }
+    });
     
     // Initialize client search
     initClientAutocomplete('client_search', function(client) {
         document.getElementById('client_search').value = client.name;
         document.getElementById('client_id').value = client.id;
+        // Store client data for email modal
+        selectedClient.name = client.name;
+        selectedClient.email = client.email || null;
+    });
+    
+    // Handle status change to "sent"
+    const statusSelect = document.getElementById('status');
+    let previousStatus = statusSelect.value;
+    
+    statusSelect.addEventListener('change', function() {
+        if (this.value === 'sent' && previousStatus !== 'sent') {
+            // Check if client is selected
+            const clientId = document.getElementById('client_id').value;
+            if (!clientId || !selectedClient.name) {
+                alert('Please select a client before marking the invoice as "Sent".');
+                this.value = previousStatus;
+                return;
+            }
+            
+            // Temporarily revert to previous status
+            const tempStatus = previousStatus;
+            this.value = tempStatus;
+            
+            // Show email confirmation modal
+            showEmailConfirmationModal(function(confirmed) {
+                if (confirmed) {
+                    // User confirmed, set status to "sent"
+                    statusSelect.value = 'sent';
+                    previousStatus = 'sent';
+                }
+                // If not confirmed, status remains as previous (already reverted)
+            });
+        } else {
+            previousStatus = this.value;
+        }
     });
     
     // Initialize product autocomplete for existing items
     initializeProductAutocomplete();
 });
+
+// Email confirmation modal
+function showEmailConfirmationModal(callback) {
+    const clientName = selectedClient.name || 'the client';
+    const clientEmail = selectedClient.email || null;
+    const hasEmail = clientEmail && clientEmail.trim() !== '';
+    
+    // Create modal overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.id = 'emailModalOverlay';
+    
+    // Create modal content
+    const modal = document.createElement('div');
+    modal.className = 'modal-dialog';
+    modal.innerHTML = `
+        <div class="modal-header">
+            <h3>Send Invoice via Email?</h3>
+        </div>
+        <div class="modal-body">
+            <p>You're about to mark this invoice as <strong>"Sent"</strong>.</p>
+            <p>Would you like to email this invoice to <strong>${clientName}</strong>?</p>
+            ${hasEmail ? `<p class="client-email"><span class="email-icon">✉</span> ${clientEmail}</p>` : '<p class="client-email-warning">⚠ No email address available for this client.</p>'}
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="modalCancelBtn">Maybe Later</button>
+            <button type="button" class="btn btn-primary" id="modalConfirmBtn" ${!hasEmail ? 'disabled' : ''}>Yes, Send Email</button>
+        </div>
+    `;
+    
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+    
+    // Add event listeners
+    document.getElementById('modalCancelBtn').addEventListener('click', function() {
+        closeEmailModal(false, callback);
+    });
+    
+    document.getElementById('modalConfirmBtn').addEventListener('click', function() {
+        if (hasEmail) {
+            closeEmailModal(true, callback);
+        }
+    });
+    
+    // Close on overlay click
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) {
+            closeEmailModal(false, callback);
+        }
+    });
+    
+    // Close on Escape key
+    document.addEventListener('keydown', function escapeHandler(e) {
+        if (e.key === 'Escape') {
+            closeEmailModal(false, callback);
+            document.removeEventListener('keydown', escapeHandler);
+        }
+    });
+}
+
+function closeEmailModal(sendEmail, callback) {
+    const overlay = document.getElementById('emailModalOverlay');
+    if (overlay) {
+        overlay.remove();
+    }
+    
+    if (sendEmail) {
+        // TODO: Implement email sending functionality
+        console.log('Email sending will be implemented later');
+        // For now, just show a message
+        alert('Email functionality will be implemented soon. Invoice status has been set to "Sent".');
+    }
+    
+    // Call the callback with the confirmation status
+    if (callback) {
+        callback(sendEmail);
+    }
+}
 
 function initializeProductAutocomplete() {
     document.querySelectorAll('.product-search').forEach(input => {
@@ -147,9 +298,19 @@ function initializeProductAutocomplete() {
         const taxInput = row.querySelector('.item-tax');
         
         initProductAutocomplete(input, function(product) {
-            input.value = product.name;
-            priceInput.value = product.price.toFixed(2);
-            taxInput.value = product.tax_rate;
+            // Handle variants - if variant_data exists, it's a variant
+            if (product.variant_data && Object.keys(product.variant_data).length > 0) {
+                // It's a variant - show product name with variant details
+                const variantLabel = Object.entries(product.variant_data)
+                    .map(([key, value]) => `${key}: ${value}`)
+                    .join(' - ');
+                input.value = `${product.product_name || product.name} - ${variantLabel}`;
+            } else {
+                // Regular product
+                input.value = product.name;
+            }
+            priceInput.value = product.price ? product.price.toFixed(2) : '0.00';
+            taxInput.value = product.tax_rate || 0;
         });
     });
 }
@@ -163,25 +324,43 @@ document.getElementById('add-item-btn').addEventListener('click', function() {
         <div class="form-row">
             <div class="form-group autocomplete-container" style="flex: 2;">
                 <label>Description (Type to search products)</label>
-                <input type="text" class="product-search" name="items[${itemCount}][description]" required>
+                <input type="text" class="product-search form-input-enhanced" name="items[${itemCount}][description]" required>
             </div>
             <div class="form-group">
                 <label>Quantity</label>
-                <input type="number" class="item-quantity" name="items[${itemCount}][quantity]" step="0.01" value="1" required>
+                <input type="number" class="item-quantity form-input-enhanced" name="items[${itemCount}][quantity]" step="0.01" value="1" required>
             </div>
         </div>
         <div class="form-row">
             <div class="form-group">
                 <label>Unit Price ($)</label>
-                <input type="number" class="item-price" name="items[${itemCount}][unit_price]" step="0.01" required>
+                <input type="number" class="item-price form-input-enhanced" name="items[${itemCount}][unit_price]" step="0.01" required>
             </div>
             <div class="form-group">
                 <label>Tax Rate (%)</label>
-                <input type="number" class="item-tax" name="items[${itemCount}][tax_rate]" step="0.01" value="0">
+                <input type="number" class="item-tax form-input-enhanced" name="items[${itemCount}][tax_rate]" step="0.01" value="0">
             </div>
         </div>
         <button type="button" class="btn btn-danger" onclick="this.parentElement.remove()">Remove Item</button>
     `;
+    
+    // Initialize autocomplete for the new item
+    const newInput = newItem.querySelector('.product-search');
+    const newPriceInput = newItem.querySelector('.item-price');
+    const newTaxInput = newItem.querySelector('.item-tax');
+    
+    initProductAutocomplete(newInput, function(product) {
+        if (product.variant_data && Object.keys(product.variant_data).length > 0) {
+            const variantLabel = Object.entries(product.variant_data)
+                .map(([key, value]) => `${key}: ${value}`)
+                .join(' - ');
+            newInput.value = `${product.product_name || product.name} - ${variantLabel}`;
+        } else {
+            newInput.value = product.name;
+        }
+        newPriceInput.value = product.price ? product.price.toFixed(2) : '0.00';
+        newTaxInput.value = product.tax_rate || 0;
+    });
     container.appendChild(newItem);
     itemCount++;
     

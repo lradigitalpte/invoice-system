@@ -1,4 +1,4 @@
-http://localhost:5000{% extends "base.html" %}
+{% extends "base.html" %}
 
 {% block title %}{% if client %}Edit Client{% else %}New Client{% endif %} - Invoicing System{% endblock %}
 
@@ -8,6 +8,12 @@ http://localhost:5000{% extends "base.html" %}
         <h1 class="card-title">{% if client %}Edit Client{% else %}Add New Client{% endif %}</h1>
     </div>
     
+    {% if error %}
+    <div style="background-color: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+        <strong>Error:</strong> {{ error }}
+    </div>
+    {% endif %}
+    
     <form method="POST" action="">
         <div class="form-row">
             <div class="form-group">
@@ -15,8 +21,8 @@ http://localhost:5000{% extends "base.html" %}
                 <input type="text" id="name" name="name" value="{% if client %}{{ client.name }}{% endif %}" required>
             </div>
             <div class="form-group">
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" value="{% if client %}{{ client.email }}{% endif %}">
+                <label for="email">Email *</label>
+                <input type="email" id="email" name="email" value="{% if client %}{{ client.email }}{% endif %}" required>
             </div>
         </div>
         

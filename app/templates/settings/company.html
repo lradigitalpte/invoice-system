@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Company Settings - Invoicing System{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">Company Settings</h1>
+        <p style="color: #6b7280; margin-top: 0.5rem;">Configure your company information, logo, and payment details for invoices</p>
+    </div>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}" style="background-color: {% if category == 'success' %}#d1fae5{% else %}#fee2e2{% endif %}; color: {% if category == 'success' %}#065f46{% else %}#991b1b{% endif %}; padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid {% if category == 'success' %}#a7f3d0{% else %}#fca5a5{% endif %};">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <form method="POST" action="" enctype="multipart/form-data">
+        <!-- Company Information Section -->
+        <div style="margin-bottom: 2.5rem;">
+            <h2 style="font-size: 1.25rem; font-weight: 700; color: #1f2937; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 2px solid #e5e7eb;">Company Information</h2>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="company_name">Company Name *</label>
+                    <input type="text" id="company_name" name="company_name" class="form-input-enhanced" value="{{ settings.company_name }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="company_tax_id">Tax ID</label>
+                    <input type="text" id="company_tax_id" name="company_tax_id" class="form-input-enhanced" value="{{ settings.company_tax_id }}">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="company_address">Address</label>
+                <input type="text" id="company_address" name="company_address" class="form-input-enhanced" value="{{ settings.company_address }}">
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="company_city">City</label>
+                    <input type="text" id="company_city" name="company_city" class="form-input-enhanced" value="{{ settings.company_city }}">
+                </div>
+                <div class="form-group">
+                    <label for="company_state">State/Province</label>
+                    <input type="text" id="company_state" name="company_state" class="form-input-enhanced" value="{{ settings.company_state }}">
+                </div>
+                <div class="form-group">
+                    <label for="company_zip">ZIP/Postal Code</label>
+                    <input type="text" id="company_zip" name="company_zip" class="form-input-enhanced" value="{{ settings.company_zip }}">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="company_country">Country</label>
+                <input type="text" id="company_country" name="company_country" class="form-input-enhanced" value="{{ settings.company_country }}">
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="company_phone">Phone</label>
+                    <input type="tel" id="company_phone" name="company_phone" class="form-input-enhanced" value="{{ settings.company_phone }}">
+                </div>
+                <div class="form-group">
+                    <label for="company_email">Email</label>
+                    <input type="email" id="company_email" name="company_email" class="form-input-enhanced" value="{{ settings.company_email }}">
+                </div>
+                <div class="form-group">
+                    <label for="company_website">Website</label>
+                    <input type="url" id="company_website" name="company_website" class="form-input-enhanced" value="{{ settings.company_website }}" placeholder="https://example.com">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Logo Section -->
+        <div style="margin-bottom: 2.5rem;">
+            <h2 style="font-size: 1.25rem; font-weight: 700; color: #1f2937; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 2px solid #e5e7eb;">Company Logo</h2>
+            
+            <div class="form-group">
+                <label for="logo">Upload Logo</label>
+                <input type="file" id="logo" name="logo" accept="image/png,image/jpeg,image/jpg,image/gif,image/svg+xml" class="form-input-enhanced">
+                <small class="form-help-text">Recommended: PNG or JPG, max 2MB. Logo will appear on invoices.</small>
+                
+                {% if settings.logo_filename %}
+                <div style="margin-top: 1rem; padding: 1rem; background-color: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
+                    <p style="margin-bottom: 0.5rem; font-weight: 600; color: #374151;">Current Logo:</p>
+                    <img src="{{ url_for('settings.serve_logo', filename=settings.logo_filename) }}" alt="Company Logo" style="max-width: 200px; max-height: 100px; object-fit: contain;">
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Payment Details Section -->
+        <div style="margin-bottom: 2.5rem;">
+            <h2 style="font-size: 1.25rem; font-weight: 700; color: #1f2937; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 2px solid #e5e7eb;">Payment Details</h2>
+            <p style="color: #6b7280; margin-bottom: 1.5rem; font-size: 0.875rem;">This information will appear on invoice PDFs</p>
+            
+            <div class="form-group">
+                <label for="bank_name">Bank Name</label>
+                <input type="text" id="bank_name" name="bank_name" class="form-input-enhanced" value="{{ settings.bank_name }}">
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="bank_account_number">Account Number</label>
+                    <input type="text" id="bank_account_number" name="bank_account_number" class="form-input-enhanced" value="{{ settings.bank_account_number }}">
+                </div>
+                <div class="form-group">
+                    <label for="bank_routing_number">Routing Number</label>
+                    <input type="text" id="bank_routing_number" name="bank_routing_number" class="form-input-enhanced" value="{{ settings.bank_routing_number }}">
+                </div>
+                <div class="form-group">
+                    <label for="bank_swift_code">SWIFT Code</label>
+                    <input type="text" id="bank_swift_code" name="bank_swift_code" class="form-input-enhanced" value="{{ settings.bank_swift_code }}">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="payment_methods">Payment Methods</label>
+                <input type="text" id="payment_methods" name="payment_methods" class="form-input-enhanced" value="{{ settings.payment_methods }}" placeholder="e.g., Bank Transfer, Credit Card, PayPal">
+                <small class="form-help-text">Comma-separated list of accepted payment methods</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="payment_instructions">Payment Instructions</label>
+                <textarea id="payment_instructions" name="payment_instructions" class="form-input-enhanced" rows="4" placeholder="Enter payment instructions that will appear on invoices...">{{ settings.payment_instructions }}</textarea>
+                <small class="form-help-text">Additional instructions for clients on how to make payments</small>
+            </div>
+        </div>
+        
+        <div style="margin-top: 2.5rem; padding-top: 1.5rem; border-top: 2px solid #f3f4f6; display: flex; gap: 1rem; justify-content: flex-end;">
+            <a href="{{ url_for('invoices.list_invoices') }}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-success">Save Settings</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

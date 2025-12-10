@@ -1,13 +1,16 @@
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak, Image
 from reportlab.lib import colors
 from datetime import datetime
 import os
+from PIL import Image as PILImage
 
 def generate_invoice_pdf(invoice):
     """Generate a PDF for an invoice"""
+    from app.models import CompanySettings
+    
     # Create data directory path relative to project root
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     pdf_dir = os.path.join(base_dir, 'data', 'invoices')
@@ -19,16 +22,66 @@ def generate_invoice_pdf(invoice):
     elements = []
     styles = getSampleStyleSheet()
     
-    # Company header
-    company_style = ParagraphStyle(
-        'CompanyHeader',
-        parent=styles['Heading1'],
-        fontSize=24,
-        textColor=colors.HexColor('#1a1a1a'),
-        spaceAfter=6
-    )
-    elements.append(Paragraph("INVOICE", company_style))
-    elements.append(Spacer(1, 0.2*inch))
+    # Get company settings
+    company = CompanySettings.get_settings()
+    
+    # Company header with logo
+    from reportlab.platypus import Table as PDFTable
+    
+    # Build company info
+    company_info = f"""
+    <b><font size="18">{company.company_name or 'Your Company Name'}</font></b><br/>
+    """
+    if company.company_address:
+        company_info += f"{company.company_address}<br/>"
+    if company.company_city or company.company_state or company.company_zip:
+        city_state = f"{company.company_city or ''}, {company.company_state or ''} {company.company_zip or ''}".strip(', ')
+        company_info += f"{city_state}<br/>"
+    if company.company_country:
+        company_info += f"{company.company_country}<br/>"
+    if company.company_phone:
+        company_info += f"Phone: {company.company_phone}<br/>"
+    if company.company_email:
+        company_info += f"Email: {company.company_email}<br/>"
+    if company.company_website:
+        company_info += f"Website: {company.company_website}<br/>"
+    
+    # Create header table with logo and company info
+    header_cells = []
+    
+    # Left cell: Logo (if exists)
+    logo_cell = ''
+    if company.logo_path and os.path.exists(company.logo_path):
+        try:
+            # Resize logo to max 1.5 inches height
+            img = PILImage.open(company.logo_path)
+            max_height = 1.5 * inch
+            ratio = max_height / img.height
+            new_width = min(img.width * ratio, 2 * inch)  # Max width 2 inches
+            logo_img = Image(company.logo_path, width=new_width, height=min(max_height, img.height * (new_width / img.width)))
+            logo_cell = logo_img
+        except Exception as e:
+            logo_cell = ''
+    else:
+        logo_cell = ''
+    
+    # Right cell: Company info and INVOICE title
+    right_content = [Paragraph(company_info, styles['Normal']), Spacer(1, 0.1*inch), Paragraph("<b><font size='24'>INVOICE</font></b>", styles['Normal'])]
+    from reportlab.platypus import KeepTogether
+    right_cell = KeepTogether(right_content)
+    
+    header_data = [[logo_cell, right_cell]]
+    
+    header_table = PDFTable(header_data, colWidths=[2.5*inch, 4*inch])
+    header_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+        ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+    ]))
+    elements.append(header_table)
+    elements.append(Spacer(1, 0.3*inch))
     
     # Invoice details
     invoice_info = f"""
@@ -97,6 +150,29 @@ def generate_invoice_pdf(invoice):
             elements.append(Paragraph(invoice.notes, styles['Normal']))
         if invoice.terms:
             elements.append(Paragraph(invoice.terms, styles['Normal']))
+        elements.append(Spacer(1, 0.2*inch))
+    
+    # Payment details section
+    if company.bank_name or company.bank_account_number or company.payment_instructions or company.payment_methods:
+        elements.append(Spacer(1, 0.2*inch))
+        elements.append(Paragraph("<b>Payment Details:</b>", styles['Heading3']))
+        
+        payment_info = ""
+        if company.bank_name:
+            payment_info += f"<b>Bank:</b> {company.bank_name}<br/>"
+        if company.bank_account_number:
+            payment_info += f"<b>Account Number:</b> {company.bank_account_number}<br/>"
+        if company.bank_routing_number:
+            payment_info += f"<b>Routing Number:</b> {company.bank_routing_number}<br/>"
+        if company.bank_swift_code:
+            payment_info += f"<b>SWIFT Code:</b> {company.bank_swift_code}<br/>"
+        if company.payment_methods:
+            payment_info += f"<b>Payment Methods:</b> {company.payment_methods}<br/>"
+        if company.payment_instructions:
+            payment_info += f"<br/>{company.payment_instructions}<br/>"
+        
+        if payment_info:
+            elements.append(Paragraph(payment_info, styles['Normal']))
     
     # Build PDF
     doc.build(elements)

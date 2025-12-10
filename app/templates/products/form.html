@@ -1,52 +1,341 @@
 {% extends "base.html" %}
 
+{% block title %}{% if product %}Edit Product{% else %}New Product{% endif %} - Invoicing System{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<style>
+.variation-section {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background-color: #f9fafb;
+    border-radius: 8px;
+    border: 2px solid #e5e7eb;
+}
+
+.option-group {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+}
+
+.variants-table {
+    margin-top: 1.5rem;
+    overflow-x: auto;
+}
+
+.variants-table table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.variants-table th {
+    background-color: #f3f4f6;
+    padding: 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.875rem;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.variants-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.variants-table input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container">
-    <div class="header">
-        <h1>{{ 'Edit Product' if product else 'New Product' }}</h1>
-        <a href="{{ url_for('products.list_products') }}" class="btn">Back to Products</a>
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">{% if product %}Edit Product{% else %}Create New Product{% endif %}</h1>
     </div>
     
-    <form method="POST" class="form">
+    <form method="POST" action="" id="productForm">
         <div class="form-row">
             <div class="form-group">
                 <label for="name">Product Name *</label>
-                <input type="text" id="name" name="name" value="{{ product.name if product }}" required>
+                <input type="text" id="name" name="name" class="form-input-enhanced" placeholder="Enter product name" value="{{ product.name if product }}" required>
             </div>
             <div class="form-group">
-                <label for="sku">SKU</label>
-                <input type="text" id="sku" name="sku" value="{{ product.sku if product }}">
+                <label for="sku">Base SKU</label>
+                <input type="text" id="sku" name="sku" class="form-input-enhanced" placeholder="Auto-generated if not provided" value="{{ product.sku if product }}">
+                <small class="form-help-text">Leave empty to auto-generate from product name. Variants will auto-generate their own SKUs.</small>
             </div>
         </div>
         
         <div class="form-group">
             <label for="description">Description</label>
-            <textarea id="description" name="description" rows="3">{{ product.description if product }}</textarea>
+            <textarea id="description" name="description" class="form-input-enhanced" rows="4" placeholder="Enter product description (optional)">{{ product.description if product }}</textarea>
         </div>
         
         <div class="form-row">
             <div class="form-group">
-                <label for="price">Price *</label>
-                <input type="number" id="price" name="price" step="0.01" value="{{ product.price if product }}" required>
+                <label for="price">Base Price *</label>
+                <div style="position: relative;">
+                    <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #6b7280; font-weight: 600; pointer-events: none;">$</span>
+                    <input type="number" id="price" name="price" class="form-input-enhanced" step="0.01" min="0" placeholder="0.00" value="{{ product.price if product }}" required style="padding-left: 2rem;">
+                </div>
+                <small class="form-help-text">Base price - variants can override</small>
             </div>
             <div class="form-group">
                 <label for="tax_rate">Tax Rate (%)</label>
-                <input type="number" id="tax_rate" name="tax_rate" step="0.1" value="{{ product.tax_rate if product else 0 }}">
+                <div style="position: relative;">
+                    <input type="number" id="tax_rate" name="tax_rate" class="form-input-enhanced" step="0.1" min="0" max="100" placeholder="0" value="{{ product.tax_rate if product else 0 }}" style="padding-right: 2.5rem;">
+                    <span style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); color: #6b7280; font-weight: 600; pointer-events: none;">%</span>
+                </div>
+                <small class="form-help-text">Tax rate percentage (0-100)</small>
             </div>
             <div class="form-group">
                 <label for="category">Category</label>
-                <input type="text" id="category" name="category" value="{{ product.category if product }}">
+                <input type="text" id="category" name="category" class="form-input-enhanced" list="categoryOptions" placeholder="Select or type a category" value="{{ product.category if product }}" autocomplete="off">
+                <datalist id="categoryOptions">
+                    {% if categories %}
+                        {% for cat in categories %}
+                        <option value="{{ cat }}">
+                        {% endfor %}
+                    {% else %}
+                        <option value="Chasing ROV Units">
+                        <option value="Chasing ROV Accessories">
+                        <option value="Chasing ROV Spare Parts">
+                    {% endif %}
+                </datalist>
+                <small class="form-help-text">Select from suggestions or type your own category</small>
             </div>
         </div>
         
         <div class="form-group">
-            <label>
-                <input type="checkbox" name="is_active" {{ 'checked' if not product or product.is_active }}>
-                Active
+            <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 1rem; background-color: #f9fafb; border-radius: 8px; border: 2px solid #e5e7eb; transition: all 0.2s ease;">
+                <input type="checkbox" 
+                       name="is_active" 
+                       id="is_active"
+                       style="width: 1.25rem; height: 1.25rem; cursor: pointer; accent-color: var(--primary);"
+                       {{ 'checked' if not product or product.is_active }}>
+                <span style="font-weight: 600; color: #1f2937;">Active</span>
+                <small style="margin-left: auto; color: #6b7280; font-weight: normal;">Product will be available for selection</small>
             </label>
         </div>
         
-        <button type="submit" class="btn">{{ 'Update Product' if product else 'Create Product' }}</button>
+        <!-- Variations Section -->
+        <div class="variation-section" id="variationSection" style="margin-top: 2rem; padding: 1.5rem; background-color: #f9fafb; border-radius: 12px; border: 1px solid #e5e7eb;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #e5e7eb;">
+                <div>
+                    <h3 style="margin: 0 0 0.25rem 0; color: #1f2937; font-size: 1.25rem;">Product Variations</h3>
+                    <p style="margin: 0; color: #6b7280; font-size: 0.875rem;">Create custom variations like Version, Model, Configuration, etc.</p>
+                </div>
+                <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.75rem 1.25rem; background-color: white; border-radius: 8px; border: 2px solid #e5e7eb; transition: all 0.2s ease;">
+                    <input type="checkbox" name="has_variants" id="has_variants" {{ 'checked' if product and product.has_variants }} onchange="toggleVariations()" style="width: 1.25rem; height: 1.25rem; cursor: pointer; accent-color: var(--primary);">
+                    <span style="font-weight: 600; color: #1f2937;">Enable Variations</span>
+                </label>
+            </div>
+            
+            <div id="variationsContent" style="display: {{ 'block' if product and product.has_variants else 'none' }};">
+                <div id="optionsContainer" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                    {% if product and product.has_variants and product.options %}
+                        {% for option in product.options %}
+                        <div class="option-group" data-option-id="{{ option.id }}" style="background-color: white; padding: 1.5rem; border-radius: 8px; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                            <div style="display: grid; grid-template-columns: 1fr 2fr auto; gap: 1.25rem; align-items: start;">
+                                <div>
+                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151; font-size: 0.875rem;">Variation Type</label>
+                                    <input type="text" name="option_name[]" class="form-input-enhanced" placeholder="e.g., Version, Model" value="{{ option.name }}" required onchange="generateVariants()">
+                                    <small style="display: block; margin-top: 0.25rem; color: #6b7280; font-size: 0.75rem;">Name of the variation</small>
+                                </div>
+                                <div>
+                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151; font-size: 0.875rem;">Values</label>
+                                    <input type="text" name="option_values[]" class="form-input-enhanced" placeholder="Basic, Pro, Advanced" value="{{ option.values|map(attribute='value')|join(', ') }}" required onchange="generateVariants()">
+                                    <small style="display: block; margin-top: 0.25rem; color: #6b7280; font-size: 0.75rem;">Comma-separated values</small>
+                                </div>
+                                <div style="display: flex; align-items: start; padding-top: 1.75rem;">
+                                    <button type="button" class="btn btn-danger" onclick="removeOption(this)" style="padding: 0.5rem 1rem; font-size: 0.875rem;">Remove</button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                
+                <button type="button" class="btn btn-primary" onclick="addOption()" style="margin-top: 1.5rem; padding: 0.75rem 1.5rem; font-weight: 600;">
+                    <span style="font-size: 1.25rem; margin-right: 0.5rem;">+</span> Add Variation Type
+                </button>
+                
+                <div id="variantsPreview" style="margin-top: 2rem; padding-top: 2rem; border-top: 2px solid #e5e7eb; display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h4 style="margin: 0; color: #1f2937; font-size: 1.125rem;">Generated Variants Preview</h4>
+                        <span id="variantCount" style="color: #6b7280; font-size: 0.875rem; font-weight: 600;"></span>
+                    </div>
+                    <div class="variants-table" style="background-color: white; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb;">
+                        <table id="variantsTable" style="width: 100%; border-collapse: collapse;">
+                            <thead style="background-color: #f9fafb;">
+                                <tr>
+                                    <th style="padding: 0.875rem 1rem; text-align: left; font-weight: 600; color: #374151; font-size: 0.875rem; border-bottom: 1px solid #e5e7eb;">Variation</th>
+                                    <th style="padding: 0.875rem 1rem; text-align: left; font-weight: 600; color: #374151; font-size: 0.875rem; border-bottom: 1px solid #e5e7eb;">SKU</th>
+                                    <th style="padding: 0.875rem 1rem; text-align: left; font-weight: 600; color: #374151; font-size: 0.875rem; border-bottom: 1px solid #e5e7eb;">Price</th>
+                                </tr>
+                            </thead>
+                            <tbody id="variantsTableBody" style="background-color: white;">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 2.5rem; padding-top: 1.5rem; border-top: 2px solid #f3f4f6; display: flex; gap: 1rem; justify-content: flex-end;">
+            <a href="{{ url_for('products.list_products') }}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-success">{% if product %}Update Product{% else %}Create Product{% endif %}</button>
+        </div>
     </form>
 </div>
+
+<script>
+let optionCount = {{ product.options|length if product and product.has_variants else 0 }};
+
+function toggleVariations() {
+    const checkbox = document.getElementById('has_variants');
+    const content = document.getElementById('variationsContent');
+    content.style.display = checkbox.checked ? 'block' : 'none';
+    if (!checkbox.checked) {
+        document.getElementById('optionsContainer').innerHTML = '';
+        optionCount = 0;
+        hideVariantsPreview();
+    }
+}
+
+function addOption() {
+    optionCount++;
+    const container = document.getElementById('optionsContainer');
+    const optionDiv = document.createElement('div');
+    optionDiv.className = 'option-group';
+    optionDiv.style.cssText = 'background-color: white; padding: 1.5rem; border-radius: 8px; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.1);';
+    optionDiv.innerHTML = `
+        <div style="display: grid; grid-template-columns: 1fr 2fr auto; gap: 1.25rem; align-items: start;">
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151; font-size: 0.875rem;">Variation Type</label>
+                <input type="text" name="option_name[]" class="form-input-enhanced" placeholder="e.g., Version, Model" required onchange="generateVariants()">
+                <small style="display: block; margin-top: 0.25rem; color: #6b7280; font-size: 0.75rem;">Name of the variation</small>
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151; font-size: 0.875rem;">Values</label>
+                <input type="text" name="option_values[]" class="form-input-enhanced" placeholder="Basic, Pro, Advanced" required onchange="generateVariants()">
+                <small style="display: block; margin-top: 0.25rem; color: #6b7280; font-size: 0.75rem;">Comma-separated values</small>
+            </div>
+            <div style="display: flex; align-items: start; padding-top: 1.75rem;">
+                <button type="button" class="btn btn-danger" onclick="removeOption(this)" style="padding: 0.5rem 1rem; font-size: 0.875rem;">Remove</button>
+            </div>
+        </div>
+    `;
+    container.appendChild(optionDiv);
+}
+
+function removeOption(button) {
+    button.closest('.option-group').remove();
+    generateVariants();
+}
+
+function generateVariants() {
+    if (!document.getElementById('has_variants').checked) return;
+    
+    const options = [];
+    const optionGroups = document.querySelectorAll('.option-group');
+    
+    optionGroups.forEach(group => {
+        const nameInput = group.querySelector('input[name="option_name[]"]');
+        const valuesInput = group.querySelector('input[name="option_values[]"]');
+        
+        if (nameInput && nameInput.value && valuesInput && valuesInput.value) {
+            const name = nameInput.value.trim();
+            const values = valuesInput.value.split(',').map(v => v.trim()).filter(v => v);
+            if (name && values.length > 0) {
+                options.push({ name, values });
+            }
+        }
+    });
+    
+    if (options.length === 0) {
+        hideVariantsPreview();
+        return;
+    }
+    
+    // Generate all combinations
+    const combinations = cartesianProduct(options.map(opt => opt.values));
+    const basePrice = parseFloat(document.getElementById('price').value) || 0;
+    
+    // Build table
+    const tbody = document.getElementById('variantsTableBody');
+    tbody.innerHTML = '';
+    
+    combinations.forEach((combo, idx) => {
+        const row = document.createElement('tr');
+        row.style.cssText = 'border-bottom: 1px solid #e5e7eb;';
+        const variantLabel = options.map((opt, i) => `${opt.name}: ${combo[i]}`).join(' - ');
+        
+        row.innerHTML = `
+            <td style="padding: 0.875rem 1rem; color: #1f2937; font-weight: 500;">${variantLabel}</td>
+            <td style="padding: 0.875rem 1rem;">
+                <input type="text" name="variant_sku[]" class="form-input-enhanced" placeholder="Auto SKU" style="width: 100%; padding: 0.5rem; font-size: 0.875rem;">
+            </td>
+            <td style="padding: 0.875rem 1rem;">
+                <div style="position: relative;">
+                    <span style="position: absolute; left: 0.5rem; top: 50%; transform: translateY(-50%); color: #6b7280; pointer-events: none; font-weight: 600;">$</span>
+                    <input type="number" name="variant_price[]" class="form-input-enhanced" step="0.01" min="0" value="${basePrice.toFixed(2)}" style="width: 100%; padding: 0.5rem; padding-left: 1.5rem; font-size: 0.875rem;">
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+    
+    // Update variant count
+    const count = combinations.length;
+    document.getElementById('variantCount').textContent = `${count} variant${count !== 1 ? 's' : ''} will be created`;
+    document.getElementById('variantsPreview').style.display = 'block';
+}
+
+function cartesianProduct(arrays) {
+    if (arrays.length === 0) return [[]];
+    if (arrays.length === 1) return arrays[0].map(x => [x]);
+    
+    const result = [];
+    const first = arrays[0];
+    const rest = cartesianProduct(arrays.slice(1));
+    
+    for (let i = 0; i < first.length; i++) {
+        for (let j = 0; j < rest.length; j++) {
+            result.push([first[i], ...rest[j]]);
+        }
+    }
+    
+    return result;
+}
+
+function hideVariantsPreview() {
+    document.getElementById('variantsPreview').style.display = 'none';
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    {% if product and product.has_variants and product.variants %}
+    // Load existing variants into the table
+    generateVariants();
+    {% endif %}
+    
+    // Add change listeners to price field
+    document.getElementById('price').addEventListener('change', function() {
+        if (document.getElementById('has_variants').checked) {
+            generateVariants();
+        }
+    });
+});
+</script>
 {% endblock %}

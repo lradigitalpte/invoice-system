@@ -58,13 +58,27 @@
         </tbody>
     </table>
     
-    <div style="margin-top: 1rem; text-align: right;">
-        <p><strong>Subtotal:</strong> ${{ "%.2f"|format(subtotal) }}</p>
-        <p><strong>Tax:</strong> ${{ "%.2f"|format(tax_total) }}</p>
-        <p style="font-size: 1.2rem;"><strong>Total:</strong> ${{ "%.2f"|format(invoice.get_total()) }}</p>
-        {% if invoice.get_paid_amount() > 0 %}
-        <p><strong>Paid:</strong> ${{ "%.2f"|format(invoice.get_paid_amount()) }}</p>
-        <p><strong>Balance:</strong> ${{ "%.2f"|format(invoice.get_balance()) }}</p>
+    <div style="margin-top: 1rem; text-align: right; padding: 1.5rem; background-color: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
+        <div style="margin-bottom: 1rem;">
+            <p style="margin-bottom: 0.5rem;"><strong>Subtotal:</strong> ${{ "%.2f"|format(subtotal) }}</p>
+            <p style="margin-bottom: 0.5rem;"><strong>Tax:</strong> ${{ "%.2f"|format(tax_total) }}</p>
+            <p style="font-size: 1.1rem; margin-bottom: 0.5rem; padding-bottom: 0.75rem; border-bottom: 2px solid #e5e7eb;"><strong>Total:</strong> ${{ "%.2f"|format(invoice.get_total()) }}</p>
+        </div>
+        {% set paid = invoice.get_paid_amount() %}
+        {% set balance = invoice.get_balance() %}
+        {% if paid > 0 %}
+        <div style="margin-bottom: 1rem; padding-top: 0.75rem; border-top: 2px solid #e5e7eb;">
+            <p style="margin-bottom: 0.5rem; color: #059669;"><strong>Paid:</strong> ${{ "%.2f"|format(paid) }}</p>
+            <p style="font-size: 1.3rem; font-weight: 700; color: {% if balance > 0 %}#dc2626{% else %}#059669{% endif %};">
+                <strong>Remaining Balance:</strong> ${{ "%.2f"|format(balance) }}
+            </p>
+        </div>
+        {% else %}
+        <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 2px solid #e5e7eb;">
+            <p style="font-size: 1.2rem; font-weight: 700; color: #dc2626;">
+                <strong>Balance Due:</strong> ${{ "%.2f"|format(balance) }}
+            </p>
+        </div>
         {% endif %}
     </div>
     

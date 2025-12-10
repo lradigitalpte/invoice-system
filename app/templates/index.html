@@ -3,41 +3,102 @@
 {% block title %}Dashboard - Invoicing System{% endblock %}
 
 {% block content %}
-<div style="margin-bottom: 2rem;">
-    <h1>Welcome to Your Invoicing System</h1>
-    <p>Get started by creating clients and invoices.</p>
-</div>
+<div class="dashboard-container">
+    <!-- Page Title -->
+    <div class="page-header">
+        <h1>Dashboard</h1>
+        <p>Overview of your invoicing system</p>
+    </div>
 
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
-    <div class="card">
-        <h3>Quick Actions</h3>
-        <ul style="list-style: none;">
-            <li style="margin-bottom: 0.5rem;"><a href="{{ url_for('invoices.create_invoice') }}" class="btn btn-primary" style="width: 100%;">+ New Invoice</a></li>
-            <li style="margin-bottom: 0.5rem;"><a href="{{ url_for('clients.create_client') }}" class="btn btn-primary" style="width: 100%;">+ New Client</a></li>
-            <li style="margin-bottom: 0.5rem;"><a href="{{ url_for('invoices.list_invoices') }}" class="btn btn-secondary" style="width: 100%;">View Invoices</a></li>
-            <li><a href="{{ url_for('clients.list_clients') }}" class="btn btn-secondary" style="width: 100%;">View Clients</a></li>
-        </ul>
+    <!-- Primary Actions -->
+    <div class="action-bar">
+        <a href="{{ url_for('invoices.create_invoice') }}" class="btn btn-primary">Create Invoice</a>
+        <a href="{{ url_for('clients.create_client') }}" class="btn btn-success">Add Client</a>
+        <a href="{{ url_for('quotations.list_quotations') }}" class="btn btn-success">View Quotations</a>
     </div>
-    
-    <div class="card">
-        <h3>System Information</h3>
-        <ul style="list-style: none; line-height: 1.8;">
-            <li><strong>Status:</strong> Online</li>
-            <li><strong>Database:</strong> SQLite (Local)</li>
-            <li><strong>Data Location:</strong> data/invoicing.db</li>
-            <li><strong>Version:</strong> 1.0</li>
-        </ul>
+
+    <!-- Statistics Grid -->
+    <div class="stats-container">
+        <div class="stat-card">
+            <div class="stat-number">{{ stats.total_invoices }}</div>
+            <div class="stat-label">Total Invoices</div>
+            <div class="stat-detail">All time</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-number">{{ stats.pending_invoices }}</div>
+            <div class="stat-label">Pending</div>
+            <div class="stat-detail">Awaiting action</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-number">{{ stats.total_revenue }}</div>
+            <div class="stat-label">Revenue</div>
+            <div class="stat-detail">Paid invoices</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-number">{{ stats.total_clients }}</div>
+            <div class="stat-label">Clients</div>
+            <div class="stat-detail">Active accounts</div>
+        </div>
     </div>
-    
-    <div class="card">
-        <h3>Features</h3>
-        <ul style="list-style: disc; margin-left: 1.5rem;">
-            <li>Manage clients</li>
-            <li>Create invoices</li>
-            <li>Track payments</li>
-            <li>Export to PDF</li>
-            <li>Offline-first storage</li>
-        </ul>
+
+    <!-- Recent Activity Section -->
+    {% if stats.recent_invoices %}
+    <div class="recent-section">
+        <h2>Recent Invoices</h2>
+        <div class="recent-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Invoice</th>
+                        <th>Client</th>
+                        <th>Balance</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for invoice in stats.recent_invoices %}
+                    <tr>
+                        <td><strong>#{{ invoice.invoice_number }}</strong></td>
+                        <td>{{ invoice.client.name if invoice.client else 'N/A' }}</td>
+                        <td><strong>${{ "%.2f"|format(invoice.get_balance()) }}</strong></td>
+                        <td><span class="badge badge-{{ invoice.status }}">{{ invoice.status|capitalize }}</span></td>
+                        <td>{{ invoice.issue_date.strftime('%b %d, %Y') }}</td>
+                        <td><a href="{{ url_for('invoices.view_invoice', invoice_id=invoice.id) }}" class="link">View</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="view-all-link">
+            <a href="{{ url_for('invoices.list_invoices') }}">View All Invoices</a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Quick Navigation -->
+    <div class="quick-nav">
+        <h2>Manage</h2>
+        <div class="nav-grid">
+            <a href="{{ url_for('invoices.list_invoices') }}" class="nav-card">
+                <div class="nav-title">Invoices</div>
+                <div class="nav-count">{{ stats.total_invoices }} total</div>
+            </a>
+            <a href="{{ url_for('clients.list_clients') }}" class="nav-card">
+                <div class="nav-title">Clients</div>
+                <div class="nav-count">{{ stats.total_clients }} active</div>
+            </a>
+            <a href="{{ url_for('products.list_products') }}" class="nav-card">
+                <div class="nav-title">Products</div>
+            </a>
+            <a href="{{ url_for('quotations.list_quotations') }}" class="nav-card">
+                <div class="nav-title">Quotations</div>
+            </a>
+        </div>
     </div>
 </div>
 {% endblock %}

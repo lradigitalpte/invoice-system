@@ -1,90 +1,96 @@
 {% extends "base.html" %}
 
+{% block title %}Quotation {{ quotation.quotation_number }} - Invoicing System{% endblock %}
+
 {% block content %}
 <div class="card">
-    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-        <h1 class="card-title">Quotation {{ quotation.quotation_number }}</h1>
-        <div>
-            <a href="{{ url_for('quotations.download_pdf', quotation_id=quotation.id) }}" class="btn">Download PDF</a>
-            <a href="{{ url_for('quotations.edit_quotation', quotation_id=quotation.id) }}" class="btn">Edit</a>
-            {% if quotation.status == 'pending' %}
-            <form method="POST" action="{{ url_for('quotations.convert_to_invoice', quotation_id=quotation.id) }}" style="display: inline;">
-                <button type="submit" class="btn" style="background: #28a745;">Convert to Invoice</button>
-            </form>
-            {% endif %}
+    <div class="card-header">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h1 class="card-title">Quotation {{ quotation.quotation_number }}</h1>
+                <span class="badge badge-{{ quotation.status }}">{{ quotation.status.upper() }}</span>
+            </div>
+            <div>
+                <a href="{{ url_for('quotations.edit_quotation', quotation_id=quotation.id) }}" class="btn btn-primary">Edit</a>
+                <a href="{{ url_for('quotations.download_pdf', quotation_id=quotation.id) }}" class="btn btn-primary">Download PDF</a>
+            </div>
         </div>
     </div>
     
-    <div class="card-body">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
-            <div>
-                <h3>Client Information</h3>
-                <p><strong>{{ quotation.client.name }}</strong></p>
-                <p>{{ quotation.client.address }}</p>
-                <p>{{ quotation.client.city }}, {{ quotation.client.state }} {{ quotation.client.zip_code }}</p>
-                <p>{{ quotation.client.country }}</p>
-                <p>Email: {{ quotation.client.email }}</p>
-                <p>Phone: {{ quotation.client.phone }}</p>
-            </div>
-            
-            <div>
-                <h3>Quotation Details</h3>
-                <p><strong>Status:</strong> <span class="badge badge-{{ 'warning' if quotation.status == 'pending' else ('success' if quotation.status == 'accepted' else 'danger') }}">{{ quotation.status }}</span></p>
-                <p><strong>Date:</strong> {{ quotation.issue_date.strftime('%B %d, %Y') }}</p>
-                <p><strong>Valid Until:</strong> {{ quotation.valid_until.strftime('%B %d, %Y') if quotation.valid_until else 'Not specified' }}</p>
-            </div>
+    <div class="form-row">
+        <div>
+            <h3>Quotation Details</h3>
+            <p><strong>Client:</strong> {{ quotation.client.name }}</p>
+            <p><strong>Issued:</strong> {{ quotation.issue_date.strftime('%B %d, %Y') }}</p>
+            <p><strong>Valid Until:</strong> {{ quotation.valid_until.strftime('%B %d, %Y') if quotation.valid_until else 'N/A' }}</p>
         </div>
-        
-        <h3>Items</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Description</th>
-                    <th>Quantity</th>
-                    <th>Unit Price</th>
-                    <th>Tax Rate</th>
-                    <th>Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in quotation.items %}
-                <tr>
-                    <td>{{ item.description }}</td>
-                    <td>{{ item.quantity }}</td>
-                    <td>${{ "%.2f"|format(item.unit_price) }}</td>
-                    <td>{{ item.tax_rate }}%</td>
-                    <td>${{ "%.2f"|format(item.total) }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        
-        <div style="margin-top: 1rem; text-align: right;">
-            <p><strong>Subtotal:</strong> ${{ "%.2f"|format(subtotal) }}</p>
-            <p><strong>Tax:</strong> ${{ "%.2f"|format(tax_total) }}</p>
-            <p style="font-size: 1.2rem;"><strong>Total:</strong> ${{ "%.2f"|format(quotation.get_total()) }}</p>
+        <div>
+            <h3>Client Information</h3>
+            <p>{{ quotation.client.address or '' }}<br>
+            {{ quotation.client.city or '' }}, {{ quotation.client.state or '' }} {{ quotation.client.zip_code or '' }}<br>
+            {{ quotation.client.country or '' }}<br>
+            Email: {{ quotation.client.email or 'N/A' }}<br>
+            Phone: {{ quotation.client.phone or 'N/A' }}</p>
         </div>
-        
-        {% if quotation.notes %}
-        <div style="margin-top: 2rem;">
-            <h3>Notes</h3>
-            <p>{{ quotation.notes }}</p>
-        </div>
-        {% endif %}
-        
-        {% if quotation.terms %}
-        <div style="margin-top: 1rem;">
-            <h3>Terms</h3>
-            <p>{{ quotation.terms }}</p>
-        </div>
-        {% endif %}
     </div>
-</div>
-
-<div style="margin-top: 1rem;">
-    <a href="{{ url_for('quotations.list_quotations') }}" class="btn">Back to Quotations</a>
-    <form method="POST" action="{{ url_for('quotations.delete_quotation', quotation_id=quotation.id) }}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this quotation?');">
-        <button type="submit" class="btn btn-danger">Delete Quotation</button>
-    </form>
+    
+    <h3 style="margin-top: 2rem;">Quotation Items</h3>
+    <table class="table-professional">
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th>Qty</th>
+                <th>Unit Price</th>
+                <th>Tax %</th>
+                <th>Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in quotation.items %}
+            <tr>
+                <td>{{ item.description }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>${{ "%.2f"|format(item.unit_price) }}</td>
+                <td>{{ item.tax_rate }}%</td>
+                <td>${{ "%.2f"|format(item.total) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <div style="margin-top: 1rem; text-align: right;">
+        <p><strong>Subtotal:</strong> ${{ "%.2f"|format(subtotal) }}</p>
+        <p><strong>Tax:</strong> ${{ "%.2f"|format(tax_total) }}</p>
+        <p style="font-size: 1.2rem;"><strong>Total:</strong> ${{ "%.2f"|format(quotation.get_total()) }}</p>
+    </div>
+    
+    {% if quotation.notes %}
+    <div style="margin-top: 1rem; padding: 1rem; background-color: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
+        <h4>Notes</h4>
+        <p>{{ quotation.notes }}</p>
+    </div>
+    {% endif %}
+    
+    {% if quotation.terms %}
+    <div style="margin-top: 1rem; padding: 1rem; background-color: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
+        <h4>Terms</h4>
+        <p>{{ quotation.terms }}</p>
+    </div>
+    {% endif %}
+    
+    {% if quotation.status == 'pending' %}
+    <div style="margin-top: 2rem; padding: 1rem; background-color: #eff6ff; border-radius: 8px; border: 1px solid #bfdbfe;">
+        <form method="POST" action="{{ url_for('quotations.convert_to_invoice', quotation_id=quotation.id) }}" style="display: inline;">
+            <button type="submit" class="btn btn-success">Convert to Invoice</button>
+        </form>
+    </div>
+    {% endif %}
+    
+    <div style="margin-top: 2rem;">
+        <a href="{{ url_for('quotations.list_quotations') }}" class="btn btn-secondary">Back to Quotations</a>
+        <form method="POST" action="{{ url_for('quotations.delete_quotation', quotation_id=quotation.id) }}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this quotation?');">
+            <button type="submit" class="btn btn-danger">Delete Quotation</button>
+        </form>
+    </div>
 </div>
 {% endblock %}

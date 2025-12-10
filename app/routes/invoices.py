@@ -10,14 +10,33 @@ bp = Blueprint('invoices', __name__, url_prefix='/invoices')
 @bp.route('/')
 def list_invoices():
     status_filter = request.args.get('status', 'all')
+    search = request.args.get('search', '').strip()
+    search_by = request.args.get('search_by', 'invoice_number')
     page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+    
+    # Validate per_page to prevent abuse
+    if per_page not in [5, 10, 25, 50, 100]:
+        per_page = 10
     
     query = Invoice.query
+    
     if status_filter != 'all':
         query = query.filter_by(status=status_filter)
     
-    invoices = query.paginate(page=page, per_page=20)
-    return render_template('invoices/list.html', invoices=invoices, status_filter=status_filter)
+    if search:
+        if search_by == 'client_name':
+            query = query.join(Client).filter(Client.name.ilike(f'%{search}%'))
+        elif search_by == 'invoice_number':
+            query = query.filter(Invoice.invoice_number.ilike(f'%{search}%'))
+        elif search_by == 'invoice_id':
+            try:
+                query = query.filter(Invoice.id == int(search))
+            except:
+                pass
+    
+    invoices = query.order_by(Invoice.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    return render_template('invoices/list.html', invoices=invoices, status_filter=status_filter, search=search, search_by=search_by, per_page=per_page)
 
 @bp.route('/new', methods=['GET', 'POST'])
 def create_invoice():

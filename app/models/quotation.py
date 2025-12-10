@@ -16,6 +16,7 @@ class Quotation(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     items = db.relationship('QuotationItem', backref='quotation', lazy=True, cascade='all, delete-orphan')
+    client = db.relationship('Client', backref='quotations', lazy=True)
     
     def get_total(self):
         return sum(item.total for item in self.items)
