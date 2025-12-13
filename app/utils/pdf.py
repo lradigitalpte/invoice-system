@@ -67,8 +67,7 @@ def generate_invoice_pdf(invoice):
     
     # Right cell: Company info and INVOICE title
     right_content = [Paragraph(company_info, styles['Normal']), Spacer(1, 0.1*inch), Paragraph("<b><font size='24'>INVOICE</font></b>", styles['Normal'])]
-    from reportlab.platypus import KeepTogether
-    right_cell = KeepTogether(right_content)
+    right_cell = right_content
     
     header_data = [[logo_cell, right_cell]]
     
@@ -111,7 +110,7 @@ def generate_invoice_pdf(invoice):
     data = [['Description', 'Qty', 'Unit Price', 'Tax %', 'Amount']]
     for item in invoice.items:
         data.append([
-            item.description,
+            Paragraph(item.description, styles['Normal']),
             f"{item.quantity}",
             f"${item.unit_price:.2f}",
             f"{item.tax_rate:.1f}%",
